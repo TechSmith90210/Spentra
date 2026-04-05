@@ -1,0 +1,56 @@
+# --- System Files ---
+.DS_Store
+Thumbs.db
+*.swp
+desktop.ini
+
+# --- Build and Output ---
+target/
+build/
+out/
+bin/
+*.class
+*.jar
+*.war
+*.ear
+*.log
+
+# --- Spring Boot & Maven/Gradle ---
+.mvn/
+mvnw
+mvnw.cmd
+.gradle/
+gradlew
+gradlew.cmd
+gradle/wrapper/gradle-wrapper.jar
+.mvn/wrapper/maven-wrapper.jar
+
+
+# --- IDE Specific (IntelliJ, VS Code, STS) ---
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+.settings/
+.classpath
+.project
+.factorypath
+.springBeans
+.sts4-cache
+.apt_generated
+.nb-gradle/
+nbproject/
+nbbuild/
+dist/
+
+# --- Environment & Secrets (CRITICAL) ---
+.env
+.env.local
+application-local.properties
+application-dev.properties
+application.properties
+# If using external keys/certs
+*.pem
+*.jks
+*.p12
