@@ -6,19 +6,30 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
-import com.spentra.backend.model.dto.ExpenseRequest;
-import com.spentra.backend.model.dto.ExpenseResponse;
+import com.spentra.backend.model.dto.expense.ExpenseRequest;
+import com.spentra.backend.model.dto.expense.ExpenseResponse;
 import com.spentra.backend.model.entity.Expense;
 import com.spentra.backend.repository.ExpenseRepository;
 
 import lombok.RequiredArgsConstructor;
 
+/**
+ * Service class responsible for handling expense-related operations.
+ * Provides methods to create, read, update, and delete expenses.
+ */
 @Service
 @RequiredArgsConstructor
 public class ExpenseService {
 
     private final ExpenseRepository repo;
 
+    /**
+     * 
+     * adds Expense
+     * 
+     * @param ExpenseRequest
+     * @return ExpenseResponse
+     */
     public ExpenseResponse addExpense(ExpenseRequest req) {
         Expense expense = new Expense();
 

@@ -1,4 +1,4 @@
-package com.spentra.backend.model.dto;
+package com.spentra.backend.model.dto.expense;
 
 import lombok.Getter;
 import lombok.Setter;

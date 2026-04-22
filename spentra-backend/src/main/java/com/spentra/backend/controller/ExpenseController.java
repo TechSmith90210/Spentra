@@ -13,8 +13,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.spentra.backend.model.dto.ExpenseRequest;
-import com.spentra.backend.model.dto.ExpenseResponse;
+import com.spentra.backend.model.dto.expense.ExpenseRequest;
+import com.spentra.backend.model.dto.expense.ExpenseResponse;
 import com.spentra.backend.service.ExpenseService;
 
 @RestController

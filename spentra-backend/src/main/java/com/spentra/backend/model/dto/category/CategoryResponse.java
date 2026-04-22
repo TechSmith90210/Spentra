@@ -1,4 +1,4 @@
-package com.spentra.backend.model.dto;
+package com.spentra.backend.model.dto.category;
 
 import java.util.UUID;
 
@@ -7,8 +7,7 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class ExpenseResponse {
+public class CategoryResponse {
     private UUID id;
-    private String title;
-    private Double amount;
+    private String name;
 }
