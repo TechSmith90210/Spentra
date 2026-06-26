@@ -1,5 +1,6 @@
 package com.spentra.backend.repository;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -9,5 +10,5 @@ import com.spentra.backend.model.entity.Category;
 
 @Repository
 public interface CategoryRepository extends JpaRepository<Category, UUID> {
-
+    List<Category> findByUserIdOrUserIsNull(UUID userId);
 }

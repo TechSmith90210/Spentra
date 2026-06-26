@@ -17,40 +17,70 @@ import com.spentra.backend.model.dto.expense.ExpenseRequest;
 import com.spentra.backend.model.dto.expense.ExpenseResponse;
 import com.spentra.backend.service.ExpenseService;
 
+/**
+ * Controller class handling HTTP requests for transaction (expense/credit) management.
+ * Offers endpoints for adding, fetching, updating, and deleting transactions.
+ */
 @RestController
 @RequestMapping("/api/expenses")
 public class ExpenseController {
 
     private final ExpenseService service;
 
-    // di added
+    /**
+     * Constructor for dependency injection.
+     *
+      * @param service the transaction service
+     */
     public ExpenseController(ExpenseService service) {
         this.service = service;
     }
 
+    /**
+     * Retrieves all transactions belonging to the authenticated user.
+     *
+     * @return List of ExpenseResponse containing all user transactions
+     */
     @GetMapping
     public List<ExpenseResponse> getExpenses() {
         return service.getExpenses();
     }
 
+    /**
+     * Creates a new transaction (expense/credit) for the authenticated user.
+     *
+     * @param exp the transaction creation request payload
+     * @return ExpenseResponse representing the created transaction details
+     */
     @PostMapping
     public ExpenseResponse addExpense(@RequestBody ExpenseRequest exp) {
-        // pass the Request Body object to service layer
         return service.addExpense(exp);
     }
 
-    // this is called when user wants to update an expense
+    /**
+     * Updates an existing transaction for the authenticated user.
+     * Enforces that the transaction belongs to the requesting user.
+     *
+     * @param req transaction update payload
+     * @param id ID of the transaction to update
+     * @return ExpenseResponse representing the updated transaction details
+     */
     @PatchMapping("/{id}")
     public ExpenseResponse updateExpense(@RequestBody ExpenseRequest req, @PathVariable UUID id) {
-        // pass the request to service layer
         return service.updateExpense(req, id);
     }
 
+    /**
+     * Deletes a transaction belonging to the authenticated user.
+     * Enforces ownership validation before deletion.
+     *
+     * @param id ID of the transaction to delete
+     * @return ResponseEntity with No Content status
+     */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteExpense(@PathVariable UUID id) {
         service.deleteExpense(id);
-        // pass the request to service layer
         return ResponseEntity.noContent().build();
     }
-
 }
+

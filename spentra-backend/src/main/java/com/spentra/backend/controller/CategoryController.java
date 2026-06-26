@@ -17,33 +17,67 @@ import com.spentra.backend.model.dto.category.CategoryRequest;
 import com.spentra.backend.model.dto.category.CategoryResponse;
 import com.spentra.backend.service.CategoryService;
 
+/**
+ * Controller class handling HTTP requests for category management.
+ * Provides endpoints to create, read, update, and delete categories.
+ */
 @RestController
 @RequestMapping("/api/categories")
 public class CategoryController {
-    private CategoryService service;
+    private final CategoryService service;
 
-    public CategoryController(CategoryService serve) {
-        this.service = serve;
+    /**
+     * Constructor for dependency injection.
+     *
+     * @param service the category service
+     */
+    public CategoryController(CategoryService service) {
+        this.service = service;
     }
 
+    /**
+     * Retrieves all categories accessible to the authenticated user.
+     *
+     * @return List of CategoryResponse representing the accessible categories
+     */
     @GetMapping
-    public List<CategoryResponse> getAllCategories() {
+     public List<CategoryResponse> getAllCategories() {
         return service.getCategories();
     }
 
+    /**
+     * Creates a new category for the authenticated user.
+     *
+     * @param req category request payload
+     * @return CategoryResponse details of the created category
+     */
     @PostMapping
     public CategoryResponse addCategory(@RequestBody CategoryRequest req) {
         return service.addCategory(req);
     }
 
+    /**
+     * Updates an existing category's properties.
+     *
+     * @param req category update payload
+     * @param id ID of the category to update
+     * @return CategoryResponse details of the updated category
+     */
     @PatchMapping("/{id}")
     public CategoryResponse updateCategory(@RequestBody CategoryRequest req, @PathVariable UUID id) {
         return service.updateCategory(req, id);
     }
 
+    /**
+     * Deletes a user-specific category.
+     *
+     * @param id ID of the category to delete
+     * @return ResponseEntity with No Content status
+     */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteCategory(@PathVariable UUID id) {
         service.deleteCategory(id);
         return ResponseEntity.noContent().build();
     }
 }
+
