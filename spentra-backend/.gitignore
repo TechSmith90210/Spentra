@@ -49,7 +49,6 @@ dist/
 .env.local
 application-local.properties
 application-dev.properties
-application.properties
 # If using external keys/certs
 *.pem
 *.jks
