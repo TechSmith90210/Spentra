@@ -115,7 +115,7 @@ export interface BudgetSummary {
 
 /* ─── Error Handling ────────────────────────────────────────────────────────── */
 
-/** Shape of error responses from the backend */
+/** Shape of error responses from the backend and */
 export interface ApiErrorResponse {
   message: string;
   statusCode: number;
