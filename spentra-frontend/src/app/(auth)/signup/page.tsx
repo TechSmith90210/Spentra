@@ -116,9 +116,15 @@ export default function SignUpPage() {
           required
           name="confirmPassword"
         />
-        <Button type="submit" variant="primary" fullWidth loading={loading} size="lg">
+        <Button type="submit" fullWidth loading={loading}>
           Create Account
         </Button>
+
+        {loading && (
+          <p className="mt-4 text-xs text-center text-on-surface-variant animate-pulse">
+            Setting up your account... (Our server may take up to 50 seconds to wake up if inactive)
+          </p>
+        )}
       </form>
 
       {/* Footer */}

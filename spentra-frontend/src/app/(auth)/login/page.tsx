@@ -81,9 +81,15 @@ export default function LoginPage() {
           required
           name="password"
         />
-        <Button type="submit" variant="primary" fullWidth loading={loading} size="lg">
-          Sign In
+        <Button type="submit" fullWidth loading={loading}>
+          Log In
         </Button>
+        
+        {loading && (
+          <p className="mt-4 text-xs text-center text-on-surface-variant animate-pulse">
+            Securely connecting... (Our server may take up to 50 seconds to wake up if inactive)
+          </p>
+        )}
       </form>
 
       {/* Footer */}
