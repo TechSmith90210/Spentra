@@ -42,7 +42,7 @@ export default function AddTransactionModal({
   onSuccess,
   transaction,
 }: AddTransactionModalProps) {
-  const { settings } = useSettings();
+  const { currency } = useSettings();
   const [categories, setCategories] = useState<Category[]>([]);
   const isEditing = !!transaction;
 
@@ -164,7 +164,7 @@ export default function AddTransactionModal({
             type="text"
             inputMode="decimal"
             placeholder="0.00"
-            value={formatInputAmount(amount, settings.currency)}
+            value={formatInputAmount(amount, currency)}
             onChange={(e) => {
               const raw = e.target.value.replace(/,/g, '');
               if (/^-?\d*\.?\d*$/.test(raw)) {

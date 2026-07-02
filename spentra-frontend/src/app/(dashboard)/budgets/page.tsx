@@ -257,6 +257,7 @@ function SetBudgetModal({
   month: string;
   onSuccess: () => void;
 }) {
+  const { currency } = useSettings();
   const [categoryId, setCategoryId] = useState('');
   const [amountLimit, setAmountLimit] = useState('');
   const [loading, setLoading] = useState(false);
@@ -314,7 +315,7 @@ function SetBudgetModal({
           type="text"
           inputMode="decimal"
           placeholder="500.00"
-          value={formatInputAmount(amountLimit, settings.currency)}
+          value={formatInputAmount(amountLimit, currency)}
           onChange={(e) => {
             const raw = e.target.value.replace(/,/g, '');
             if (/^-?\d*\.?\d*$/.test(raw)) {
