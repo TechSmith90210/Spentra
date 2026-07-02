@@ -29,6 +29,30 @@ export function formatCurrency(amount: number, currencyCode: string = 'INR'): st
   }).format(amount);
 }
 
+/**
+ * Formats a raw numeric string into a comma-separated string while typing.
+ * Supports negative numbers and decimals.
+ */
+export function formatInputAmount(value: string, currencyCode: string = 'INR'): string {
+  if (!value) return '';
+  const isNegative = value.startsWith('-');
+  const rawValue = isNegative ? value.slice(1) : value;
+  
+  const [int, dec] = rawValue.split('.');
+  if (!int && isNegative) return '-';
+  
+  const parsedInt = parseInt(int, 10);
+  const locale = currencyCode === 'INR' ? 'en-IN' : 'en-US';
+  let formattedInt = isNaN(parsedInt) ? '' : new Intl.NumberFormat(locale).format(parsedInt);
+  
+  if (isNegative && formattedInt) formattedInt = '-' + formattedInt;
+  
+  if (value.includes('.')) {
+    return `${formattedInt}.${dec || ''}`;
+  }
+  return formattedInt || (isNegative ? '-' : '');
+}
+
 /* ─── Date Formatting ───────────────────────────────────────────────────────── */
 
 /**

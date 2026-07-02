@@ -12,6 +12,8 @@ import Button from '@/components/Button';
 import { getCategories } from '@/lib/api/categories';
 import { createTransaction, updateTransaction, deleteTransaction } from '@/lib/api/transactions';
 import type { Category, Transaction, TransactionType, Recurrence } from '@/lib/api/types';
+import { useSettings } from '@/providers/SettingsProvider';
+import { formatInputAmount } from '@/lib/utils';
 
 interface AddTransactionModalProps {
   isOpen: boolean;
@@ -40,6 +42,8 @@ export default function AddTransactionModal({
   onSuccess,
   transaction,
 }: AddTransactionModalProps) {
+  const { settings } = useSettings();
+  const [categories, setCategories] = useState<Category[]>([]);
   const isEditing = !!transaction;
 
   const [title, setTitle] = useState('');
@@ -158,10 +162,16 @@ export default function AddTransactionModal({
         <div className="grid grid-cols-2 gap-4">
           <Input
             label="Amount"
-            type="number"
+            type="text"
+            inputMode="decimal"
             placeholder="0.00"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            value={formatInputAmount(amount, settings.currency)}
+            onChange={(e) => {
+              const raw = e.target.value.replace(/,/g, '');
+              if (/^-?\d*\.?\d*$/.test(raw)) {
+                setAmount(raw);
+              }
+            }}
             required
             name="amount"
           />

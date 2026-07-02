@@ -4,17 +4,20 @@
 
 'use client';
 
+import { useState } from 'react';
 import { useAuth } from '@/providers/AuthProvider';
 import { useSettings, type CurrencyCode } from '@/providers/SettingsProvider';
 import { useRouter } from 'next/navigation';
-import { LogOut, User, Mail, Shield, Globe } from 'lucide-react';
+import { LogOut, User, Mail, Shield, Globe, Tags } from 'lucide-react';
 import Button from '@/components/Button';
 import Avatar from '@/components/Avatar';
+import ManageCategoriesModal from '@/features/categories/ManageCategoriesModal';
 
 export default function SettingsPage() {
   const { user, logout } = useAuth();
   const { currency, setCurrency } = useSettings();
   const router = useRouter();
+  const [showCategoriesModal, setShowCategoriesModal] = useState(false);
 
   function handleLogout() {
     logout();
@@ -100,6 +103,21 @@ export default function SettingsPage() {
               <option value="GBP">British Pound (£)</option>
             </select>
           </div>
+
+          <div className="flex items-center justify-between py-2 border-t border-outline-variant/10 pt-4 mt-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-surface-container rounded-lg text-on-surface-variant">
+                <Tags className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-on-surface">Categories</p>
+                <p className="text-xs text-on-surface-variant">Manage custom spending categories</p>
+              </div>
+            </div>
+            <Button variant="secondary" size="sm" onClick={() => setShowCategoriesModal(true)}>
+              Manage
+            </Button>
+          </div>
         </div>
       </section>
 
@@ -113,6 +131,11 @@ export default function SettingsPage() {
           Sign Out
         </Button>
       </section>
+
+      <ManageCategoriesModal
+        isOpen={showCategoriesModal}
+        onClose={() => setShowCategoriesModal(false)}
+      />
     </div>
   );
 }

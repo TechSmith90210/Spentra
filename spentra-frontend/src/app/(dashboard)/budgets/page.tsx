@@ -11,7 +11,7 @@ import { getBudgetSummary, setBudget } from '@/lib/api/budgets';
 import { getTransactions } from '@/lib/api/transactions';
 import { getCategories } from '@/lib/api/categories';
 import { useSettings } from '@/providers/SettingsProvider';
-import { formatCurrency, formatMonth, getCurrentMonth } from '@/lib/utils';
+import { formatCurrency, formatMonth, getCurrentMonth, formatInputAmount } from '@/lib/utils';
 import type { BudgetSummary, Transaction, Category, CreateBudgetRequest } from '@/lib/api/types';
 import ProgressBar from '@/components/ProgressBar';
 import Skeleton from '@/components/Skeleton';
@@ -311,10 +311,16 @@ function SetBudgetModal({
         />
         <Input
           label="Budget Limit"
-          type="number"
+          type="text"
+          inputMode="decimal"
           placeholder="500.00"
-          value={amountLimit}
-          onChange={(e) => setAmountLimit(e.target.value)}
+          value={formatInputAmount(amountLimit, settings.currency)}
+          onChange={(e) => {
+            const raw = e.target.value.replace(/,/g, '');
+            if (/^-?\d*\.?\d*$/.test(raw)) {
+              setAmountLimit(raw);
+            }
+          }}
           required
           name="amountLimit"
         />
