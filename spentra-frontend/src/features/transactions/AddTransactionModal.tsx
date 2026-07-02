@@ -53,7 +53,6 @@ export default function AddTransactionModal({
   const [transactionDate, setTransactionDate] = useState('');
   const [isRecurring, setIsRecurring] = useState(false);
   const [recurrence, setRecurrence] = useState<Recurrence>('NONE');
-  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState('');
