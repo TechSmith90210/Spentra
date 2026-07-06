@@ -63,7 +63,7 @@ public class SecurityConfig {
 
                 // 2. Configure Route Access (Node equivalent: router.get('/public', ...))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**", "/api/health").permitAll() // Open to everyone
+                        .requestMatchers("/api/auth/**", "/api/health", "/health").permitAll() // Open to everyone
                         .anyRequest().authenticated() // Everything else needs a token
                 )
 
