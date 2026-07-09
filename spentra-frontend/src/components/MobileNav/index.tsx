@@ -62,10 +62,13 @@ export default function MobileNav() {
       <div className="relative flex items-center justify-around h-16">
         {/* Animated Active Indicator Pill */}
         <div
-          className="absolute top-2 bottom-2 w-1/4 rounded-[1.5rem] bg-on-surface/[0.08] transition-transform duration-300 ease-out z-0"
+          className="absolute top-1 bottom-1 w-1/4 rounded-[1.5rem] bg-on-surface/[0.08] z-0"
           style={{
             transform: `translateX(${Math.max(0, NAV_ITEMS.findIndex(i => i.href === pathname)) * 100}%)`,
-            left: 0
+            left: 0,
+            transitionProperty: 'transform',
+            transitionDuration: '500ms',
+            transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)'
           }}
         />
 

@@ -2,8 +2,8 @@ name: Keep Render Awake
 
 on:
   schedule:
-    # Run every 9 minutes to keep the Render free instance awake
-    - cron: "*/9 * * * *"
+    # Run every 6 minutes to keep the Render free instance awake
+    - cron: "*/6 * * * *"
   workflow_dispatch: # Allow manual execution
 
 jobs:

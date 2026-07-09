@@ -16,7 +16,8 @@
 
 'use client';
 
-import { useEffect, useCallback, useRef, type ReactNode } from 'react';
+import { useEffect, useCallback, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 /** Size preset for the modal panel */
@@ -57,6 +58,11 @@ export default function Modal({
   size = 'md',
 }: ModalProps) {
   const panelRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   /** Lock body scroll when the modal is open */
   useEffect(() => {
@@ -102,9 +108,9 @@ export default function Modal({
     [onClose]
   );
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
-  return (
+  const modalContent = (
     <div
       className={[
         'fixed inset-0 z-[100]',
@@ -154,4 +160,6 @@ export default function Modal({
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }
