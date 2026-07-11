@@ -2,8 +2,8 @@ name: Keep Render Awake
 
 on:
   schedule:
-    # Run every 5 minutes to keep the Render free instance awake
-    - cron: "*/5 * * * *"
+    # Run every 4 minutes to keep the Render free instance awake
+    - cron: "*/4 * * * *"
   workflow_dispatch: # Allow manual execution
 
 jobs:
@@ -18,14 +18,14 @@ jobs:
           echo "First ping..."
           curl --fail --silent --show-error https://spentra-backend.onrender.com/health || true
 
-          echo "Waiting 30 seconds..."
-          sleep 30
+          echo "Waiting 5 seconds..."
+          sleep 5
 
           echo "Second ping..."
           curl --fail --silent --show-error https://spentra-backend.onrender.com/health || true
 
-          echo "Waiting 30 seconds..."
-          sleep 30
+          echo "Waiting 5 seconds..."
+          sleep 5
 
           echo "Third ping..."
           curl --fail --silent --show-error https://spentra-backend.onrender.com/health || true
