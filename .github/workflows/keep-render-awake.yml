@@ -2,8 +2,8 @@ name: Keep Render Awake
 
 on:
   schedule:
-    # Run every 9 minutes to keep the Render free instance awake
-    - cron: "*/9 * * * *"
+    # Run every 5 minutes to keep the Render free instance awake
+    - cron: "*/5 * * * *"
   workflow_dispatch: # Allow manual execution
 
 jobs:
@@ -12,8 +12,32 @@ jobs:
     steps:
       - name: Ping backend health endpoint
         # Use curl to ping the /health endpoint. 
-        # --fail: Fails on server errors (HTTP >= 400)
-        # --silent: Don't show progress meter or error messages
-        # --show-error: Still show error messages when it fails
+        # GitHub Actions cron can be delayed, so we do multiple pings
+        # to ensure the backend truly warms up and stays awake.
         run: |
-          curl --fail --silent --show-error https://spentra-backend.onrender.com/health
+          echo "First ping..."
+          curl --fail --silent --show-error https://spentra-backend.onrender.com/health || true
+
+          echo "Waiting 5 seconds..."
+          sleep 5
+
+          echo "Second ping..."
+          curl --fail --silent --show-error https://spentra-backend.onrender.com/health || true
+
+          echo "Waiting 5 seconds..."
+          sleep 5
+
+          echo "Third ping..."
+          curl --fail --silent --show-error https://spentra-backend.onrender.com/health || true
+
+          echo "Waiting 5 seconds..."
+          sleep 5
+
+          echo "Fourth ping..."
+          curl --fail --silent --show-error https://spentra-backend.onrender.com/health || true
+
+          echo "Waiting 5 seconds..."
+          sleep 5
+
+          echo "Fifth ping..."
+          curl --fail --silent --show-error https://spentra-backend.onrender.com/health || true
