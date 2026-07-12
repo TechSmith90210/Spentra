@@ -9,10 +9,10 @@ This document lists the remaining tasks to complete your Expense Tracker API MVP
 Ensure users can only view and modify their own expenses and categories.
 
 ### 📝 Tasks
-- [ ] Retrieve the authenticated user's ID from Spring Security's context.
-- [ ] Bind categories and expenses to the authenticated user on creation.
-- [ ] Update repository queries to filter by `userId` (or allow global categories where `user_id` is null).
-- [ ] Block updates and deletions of records that do not belong to the active user.
+- [x] Retrieve the authenticated user's ID from Spring Security's context.
+- [x] Bind categories and expenses to the authenticated user on creation.
+- [x] Update repository queries to filter by `userId` (or allow global categories where `user_id` is null).
+- [x] Block updates and deletions of records that do not belong to the active user.
 
 ### 💡 Spring Boot Code Snippets
 
