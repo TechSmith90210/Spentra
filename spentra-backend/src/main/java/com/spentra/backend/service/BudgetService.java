@@ -163,8 +163,11 @@ public class BudgetService {
             UUID categoryId = category != null ? category.getId() : null;
             String categoryName = category != null ? category.getName() : "Global";
 
-            // Retrieve precalculated spending from map, default to 0.0 if not present
-            Double actualSpent = spentMap.getOrDefault(categoryId, 0.0);
+            // If categoryId is null, it is a global budget, representing the sum of all monthly expenses.
+            // Otherwise, retrieve precalculated category spending from the map.
+            Double actualSpent = categoryId == null
+                    ? spentMap.values().stream().mapToDouble(Double::doubleValue).sum()
+                    : spentMap.getOrDefault(categoryId, 0.0);
 
             Double remaining = limit - actualSpent;
             Boolean isExceeded = actualSpent > limit;
