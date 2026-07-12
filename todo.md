@@ -146,9 +146,9 @@ public interface ExpenseRepository extends JpaRepository<Expense, UUID> {
 Automate transactions that occur regularly (e.g. Netflix subscription, monthly salary).
 
 ### 📝 Tasks
-- [ ] Create a `RecurrencePeriod` enum (`NONE`, `DAILY`, `WEEKLY`, `MONTHLY`, `YEARLY`).
-- [ ] Add `recurrence` and `isRecurring` flags to your transactions.
-- [ ] Write a scheduled background runner in Spring Boot.
+- [x] Create a `RecurrencePeriod` enum (`NONE`, `DAILY`, `WEEKLY`, `MONTHLY`, `YEARLY`).
+- [x] Add `recurrence` and `isRecurring` flags to your transactions.
+- [x] Write a scheduled background runner in Spring Boot.
 
 ### 💡 Spring Boot Code Snippets
 

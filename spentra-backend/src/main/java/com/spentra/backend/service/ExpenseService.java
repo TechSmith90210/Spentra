@@ -102,6 +102,7 @@ public class ExpenseService {
 
     /**
      * Helper to compute the next execution date for a recurring transaction.
+     * Maps the frequency period enum to exact chronological additions.
      *
      * @param currentDate starting date
      * @param period frequency of recurrence
@@ -256,4 +257,3 @@ public class ExpenseService {
         repo.delete(expenseToDelete);
     }
 }
-
