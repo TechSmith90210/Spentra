@@ -115,7 +115,9 @@ describe('utils.ts', () => {
     it('falls back to "circle-dot" for empty/whitespace-only input', () => {
       expect(getCategoryIcon('')).toBe('circle-dot');
       expect(getCategoryIcon('   ')).toBe('circle-dot');
-import { formatInputAmount } from './utils';
+    });
+  });
+});
 
 describe('formatInputAmount', () => {
   describe('basic formatting', () => {

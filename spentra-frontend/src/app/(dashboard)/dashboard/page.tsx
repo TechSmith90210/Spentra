@@ -8,7 +8,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, Receipt } from 'lucide-react';
+import { TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, Receipt, Sparkles } from 'lucide-react';
 import { getTransactions } from '@/lib/api/transactions';
 import { getBudgetSummary } from '@/lib/api/budgets';
 import { formatCurrency, getCurrentMonth, formatDate } from '@/lib/utils';
@@ -83,35 +83,95 @@ export default function DashboardPage() {
     return { totalIncome, totalExpenses, balance, categories, recentTransactions };
   }, [transactions]);
 
-  /** Computed motivational message */
-  const motivation = useMemo(() => {
-    if (loading) return '';
-    
-    const messages = [];
-    const hour = new Date().getHours();
-    let greeting = 'Good morning';
-    if (hour >= 12 && hour < 17) greeting = 'Good afternoon';
-    else if (hour >= 17) greeting = 'Good evening';
+  /** Computed financial insights */
+  const insights = useMemo(() => {
+    if (loading) return [];
+    const list: string[] = [];
 
-    const name = user?.name ? user.name.split(' ')[0] : 'there';
-    
+    // 1. Critical / Budget Exceeded
+    const exceeded = budgets.filter((b) => b.isExceeded);
+    if (exceeded.length > 0) {
+      if (exceeded.length === 1) {
+        list.push(`You've exceeded your "${exceeded[0].categoryName}" budget by ${formatCurrency(exceeded[0].actualSpent - exceeded[0].amountLimit, currency)}.`);
+      } else {
+        list.push(`You have exceeded budgets in ${exceeded.length} categories: ${exceeded.map(b => `"${b.categoryName}"`).join(', ')}.`);
+      }
+    }
+
+    // 2. Budget Warnings (running hot > 85%)
+    const hot = budgets.filter((b) => !b.isExceeded && b.amountLimit > 0 && (b.actualSpent / b.amountLimit) >= 0.85);
+    if (hot.length > 0) {
+      if (hot.length === 1) {
+        list.push(`Your "${hot[0].categoryName}" budget is running hot at ${Math.round((hot[0].actualSpent / hot[0].amountLimit) * 100)}% of its limit (${formatCurrency(hot[0].remaining, currency)} remaining).`);
+      } else {
+        list.push(`Budgets for ${hot.map(b => `"${b.categoryName}"`).join(', ')} are running hot (over 85% spent).`);
+      }
+    }
+
+    // 3. High Savings Rate
+    if (summary.totalIncome > 0 && summary.totalExpenses < summary.totalIncome) {
+      const netSavings = summary.totalIncome - summary.totalExpenses;
+      const savingsRate = Math.round((netSavings / summary.totalIncome) * 100);
+      if (savingsRate >= 20) {
+        list.push(`Incredible work! You've saved ${savingsRate}% of your income (${formatCurrency(netSavings, currency)}) so far this month.`);
+        list.push(`Your savings rate is looking spectacular at ${savingsRate}% this month!`);
+      }
+    }
+
+    // 4. Deficit Alert
+    if (summary.totalExpenses > summary.totalIncome && summary.totalIncome > 0) {
+      const deficit = summary.totalExpenses - summary.totalIncome;
+      list.push(`Your expenses are outpacing your income by ${formatCurrency(deficit, currency)} this month. Let's see where we can trim back.`);
+    }
+
+    // 5. Top Spend Category
+    if (summary.categories.length > 0 && summary.totalExpenses > 0) {
+      const topCat = summary.categories[0];
+      list.push(`Your biggest spending category this month is "${topCat.name}" at ${formatCurrency(topCat.amount, currency)} (${topCat.percentage}% of all expenses).`);
+    }
+
+    // 6. Budgets all healthy
+    if (budgets.length > 0 && exceeded.length === 0 && hot.length === 0) {
+      list.push(`All of your active budgets are beautifully in the green! Magnificent money management.`);
+    }
+
+    // 7. Portfolio surplus
     if (summary.balance > 1000) {
-      messages.push(`${greeting}, ${name}. Your portfolio is looking incredibly strong!`);
-      messages.push(`${greeting}, ${name}. Fantastic job keeping your balance high.`);
+      list.push(`Your portfolio is looking incredibly strong with a net surplus of ${formatCurrency(summary.balance, currency)}.`);
+      list.push(`Fantastic job keeping your net balance high at ${formatCurrency(summary.balance, currency)}.`);
     } else if (summary.balance > 0) {
-      messages.push(`${greeting}, ${name}. You're on the right track, keep it up.`);
+      list.push(`Your portfolio is in the green with a surplus of ${formatCurrency(summary.balance, currency)}. Keep up the steady progress.`);
     } else if (summary.balance < 0) {
-      messages.push(`${greeting}, ${name}. It's a good time to review your recent expenses.`);
+      list.push(`Your balance is currently in the negative by ${formatCurrency(Math.abs(summary.balance), currency)}. It's a good time to review your recent expenses.`);
     } else {
-      messages.push(`${greeting}, ${name}. Ready to take control of your finances?`);
+      list.push(`Ready to take control of your finances? Start tracking your daily habits to build wealth.`);
     }
 
-    if (budgets.some(b => b.isExceeded)) {
-      messages.push(`Hey ${name}, careful—some of your budgets are running hot.`);
+    // 8. No transactions
+    if (transactions.length === 0) {
+      return [`Welcome to Spentra! Ready to take control? Start by logging your first transaction to unlock deep insights.`];
     }
 
-    return messages[Math.floor(Math.random() * messages.length)];
-  }, [summary, budgets, loading, user]);
+    return list;
+  }, [summary, budgets, loading, currency, transactions.length]);
+
+  const [insightIndex, setInsightIndex] = useState(0);
+
+  // Reset/clamp index when insights length changes
+  useEffect(() => {
+    setInsightIndex(0);
+  }, [insights.length]);
+
+  const greeting = useMemo(() => {
+    const hour = new Date().getHours();
+    const name = user?.name ? user.name.split(' ')[0] : 'there';
+    if (hour >= 5 && hour < 12) return `Good morning, ${name}!`;
+    if (hour >= 12 && hour < 17) return `Good afternoon, ${name}!`;
+    if (hour >= 17 && hour < 22) return `Good evening, ${name}!`;
+    return `Burning the midnight oil, ${name}?`;
+  }, [user]);
+
+  const activeInsight = insights[insightIndex] || '';
 
   if (loading) return <DashboardSkeleton />;
 
@@ -137,8 +197,25 @@ export default function DashboardPage() {
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-on-surface">
             Financial Summary
           </h1>
-          {motivation && (
-            <p className="text-sm font-medium text-tertiary mt-3 max-w-md animate-fade-in">{motivation}</p>
+          {activeInsight && (
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 mt-3 text-sm font-medium text-tertiary select-none">
+              <span className="font-semibold text-on-surface">
+                {greeting}
+              </span>
+              <span className="text-tertiary/90 transition-all duration-300 animate-fade-in" key={insightIndex}>
+                {activeInsight}
+              </span>
+              {insights.length > 1 && (
+                <button
+                  onClick={() => setInsightIndex((prev) => (prev + 1) % insights.length)}
+                  className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-surface-container-low hover:bg-surface-container-highest border border-surface-container-highest rounded-full text-[10px] text-tertiary/70 hover:text-tertiary transition-all cursor-pointer shadow-sm active:scale-95"
+                  title="Cycle financial insights"
+                >
+                  <Sparkles className="w-3 h-3 text-tertiary/60" />
+                  <span>Insight {insightIndex + 1}/{insights.length}</span>
+                </button>
+              )}
+            </div>
           )}
         </div>
         <div className="flex items-center gap-3 px-5 py-3 bg-surface-container-low rounded-xl">
