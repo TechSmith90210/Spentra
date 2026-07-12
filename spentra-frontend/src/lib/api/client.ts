@@ -10,6 +10,7 @@
  *   - Automatic 401 session expiration → redirect to /login
  */
 
+import { SPENTRA_TOKEN_KEY, SPENTRA_USER_KEY } from '@/lib/constants/auth';
 import type { ApiErrorResponse } from './types';
 
 /* ─── Configuration ─────────────────────────────────────────────────────────── */
@@ -74,7 +75,7 @@ export async function apiClient<T>(
 
   // Inject Bearer token when running on the client
   if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('spentra-token');
+    const token = localStorage.getItem(SPENTRA_TOKEN_KEY);
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
@@ -102,8 +103,8 @@ export async function apiClient<T>(
 
     // Session expired — clear credentials and bounce to login
     if (response.status === 401 && typeof window !== 'undefined') {
-      localStorage.removeItem('spentra-token');
-      localStorage.removeItem('spentra-user');
+      localStorage.removeItem(SPENTRA_TOKEN_KEY);
+      localStorage.removeItem(SPENTRA_USER_KEY);
       window.location.href = '/login';
     }
 
