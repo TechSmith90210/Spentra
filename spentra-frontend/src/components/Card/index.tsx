@@ -96,7 +96,7 @@ export default function Card({
         paddingStyles[padding],
         // Interactive
         interactive
-          ? 'hover:shadow-md transition-all duration-200 cursor-pointer'
+          ? 'hover:shadow-lg hover:-translate-y-1 hover:scale-[1.01] transition-all duration-300 ease-out cursor-pointer active:scale-[0.99] active:translate-y-0'
           : '',
         // Custom overrides
         className,

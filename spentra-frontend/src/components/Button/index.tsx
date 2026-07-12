@@ -46,13 +46,13 @@ export interface ButtonProps
 /** Tailwind classes for each variant */
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
-    'void-gradient text-on-primary shadow-sm hover:shadow-md',
+    'void-gradient text-on-primary shadow-sm hover:shadow-md hover:-translate-y-0.5 hover:brightness-105 active:translate-y-0',
   secondary:
-    'bg-surface-container-high text-on-surface hover:bg-surface-container-highest',
+    'bg-surface-container-high text-on-surface hover:bg-surface-container-highest hover:-translate-y-0.5 active:translate-y-0',
   tertiary:
     'bg-transparent text-tertiary hover:underline underline-offset-4',
   danger:
-    'bg-error text-on-error hover:bg-error/90',
+    'bg-error text-on-error hover:bg-error/90 hover:-translate-y-0.5 active:translate-y-0',
 };
 
 /** Tailwind classes for each size */
