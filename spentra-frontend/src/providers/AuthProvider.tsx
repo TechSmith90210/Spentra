@@ -11,6 +11,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { login as apiLogin, signup as apiSignup } from '@/lib/api/auth';
 import type { AuthRequest, SignUpRequest } from '@/lib/api/types';
+import { SPENTRA_TOKEN_KEY, SPENTRA_USER_KEY } from '@/lib/constants/auth';
 
 /** User profile stored in auth state */
 interface User {
@@ -30,9 +31,6 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-const TOKEN_KEY = 'spentra-token';
-const USER_KEY = 'spentra-user';
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -41,24 +39,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   /* Hydrate auth state from localStorage on mount */
   useEffect(() => {
     try {
-      const storedToken = localStorage.getItem(TOKEN_KEY);
-      const storedUser = localStorage.getItem(USER_KEY);
+      const storedToken = localStorage.getItem(SPENTRA_TOKEN_KEY);
+      const storedUser = localStorage.getItem(SPENTRA_USER_KEY);
 
       if (storedToken && storedUser) {
         setToken(storedToken);
         setUser(JSON.parse(storedUser));
       }
     } catch {
-      localStorage.removeItem(TOKEN_KEY);
-      localStorage.removeItem(USER_KEY);
+      localStorage.removeItem(SPENTRA_TOKEN_KEY);
+      localStorage.removeItem(SPENTRA_USER_KEY);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   const persistAuth = useCallback((authToken: string, authUser: User) => {
-    localStorage.setItem(TOKEN_KEY, authToken);
-    localStorage.setItem(USER_KEY, JSON.stringify(authUser));
+    localStorage.setItem(SPENTRA_TOKEN_KEY, authToken);
+    localStorage.setItem(SPENTRA_USER_KEY, JSON.stringify(authUser));
     setToken(authToken);
     setUser(authUser);
   }, []);
@@ -74,8 +72,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [persistAuth]);
 
   const logout = useCallback(() => {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
+    localStorage.removeItem(SPENTRA_TOKEN_KEY);
+    localStorage.removeItem(SPENTRA_USER_KEY);
     setToken(null);
     setUser(null);
   }, []);
