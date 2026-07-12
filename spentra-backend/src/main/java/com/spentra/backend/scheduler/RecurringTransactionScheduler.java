@@ -69,6 +69,12 @@ public class RecurringTransactionScheduler {
                     // Advance the template's next execution date based on recurrence period
                     LocalDate nextDate = expenseService.calculateNextExecutionDate(executionDate, template.getRecurrence());
                     template.setNextExecutionDate(nextDate);
+
+                    // If recurrence is invalid or NONE, disable future executions
+                    if (nextDate == null) {
+                        log.warn("Next execution date resolved to null for template ID: {}. Disabling recurrence.", template.getId());
+                        template.setIsRecurring(false);
+                    }
                 }
 
                 expenseRepository.save(template);
