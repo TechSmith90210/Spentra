@@ -4,6 +4,8 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -137,24 +139,38 @@ public class BudgetService {
         LocalDate startDate = budgetMonth.atDay(1);
         LocalDate endDate = budgetMonth.atEndOfMonth();
 
+        // Optimized single batch query to retrieve total spent grouped by category
+        List<Object[]> results = expenseRepository.calculateTotalSpentByCategory(
+                currentUser.getId(),
+                TransactionType.EXPENSE,
+                startDate,
+                endDate
+        );
+
+        Map<UUID, Double> spentMap = new HashMap<>();
+        for (Object[] row : results) {
+            UUID categoryId = (UUID) row[0];
+            Double spent = (Double) row[1];
+            if (spent != null) {
+                spentMap.put(categoryId, spent);
+            }
+        }
+
         return budgets.stream().map(budget -> {
             Category category = budget.getCategory();
             Double limit = budget.getAmountLimit();
 
-            // Query actual spent
-            Double actualSpent = expenseRepository.calculateTotalSpent(
-                    currentUser.getId(),
-                    TransactionType.EXPENSE,
-                    category,
-                    startDate,
-                    endDate
-            );
+            UUID categoryId = category != null ? category.getId() : null;
+            String categoryName = category != null ? category.getName() : "Global";
+
+            // If categoryId is null, it is a global budget, representing the sum of all monthly expenses.
+            // Otherwise, retrieve precalculated category spending from the map.
+            Double actualSpent = categoryId == null
+                    ? spentMap.values().stream().mapToDouble(Double::doubleValue).sum()
+                    : spentMap.getOrDefault(categoryId, 0.0);
 
             Double remaining = limit - actualSpent;
             Boolean isExceeded = actualSpent > limit;
-
-            UUID categoryId = category != null ? category.getId() : null;
-            String categoryName = category != null ? category.getName() : "Global";
 
             return new BudgetSummaryResponse(
                     budget.getId(),

@@ -57,4 +57,27 @@ public interface ExpenseRepository extends JpaRepository<Expense, UUID> {
         @Param("startDate") LocalDate startDate,
         @Param("endDate") LocalDate endDate
     );
+
+    /**
+     * Calculates the sum of transaction amounts of a specific type (EXPENSE/CREDIT)
+     * for a user, within a date range, grouped by category ID.
+     * Includes transactions with null (global) category grouped under null category ID.
+     *
+     * @param userId the user whose transactions are being summed
+     * @param type the transaction type (EXPENSE or CREDIT)
+     * @param startDate the start date of the period (inclusive)
+     * @param endDate the end date of the period (inclusive)
+     * @return a list of object arrays containing [UUID categoryId, Double totalSpent]
+     */
+    @Query("SELECT e.category.id, COALESCE(SUM(e.amount), 0.0) FROM Expense e " +
+           "WHERE e.user.id = :userId " +
+           "AND e.type = :type " +
+           "AND e.transactionDate BETWEEN :startDate AND :endDate " +
+           "GROUP BY e.category.id")
+    List<Object[]> calculateTotalSpentByCategory(
+        @Param("userId") UUID userId,
+        @Param("type") TransactionType type,
+        @Param("startDate") LocalDate startDate,
+        @Param("endDate") LocalDate endDate
+    );
 }
