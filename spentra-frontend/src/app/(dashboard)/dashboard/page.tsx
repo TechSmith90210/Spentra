@@ -151,7 +151,7 @@ export default function DashboardPage() {
       {/* The Monolith Cards — Asymmetric Grid */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6 mb-12 items-start">
         {/* Hero: Total Balance */}
-        <div className="md:col-span-6 lg:col-span-5 bg-surface-container-lowest p-8 rounded-[1.5rem] relative overflow-hidden shadow-sm">
+        <div className="md:col-span-6 lg:col-span-5 bg-surface-container-lowest p-8 rounded-[1.5rem] relative overflow-hidden shadow-sm animate-slide-up stagger-1 hover:-translate-y-1 hover:scale-[1.01] hover:shadow-md transition-all duration-300 ease-out" style={{ animationFillMode: "both" }}>
           <div className="relative z-10">
             <p className="text-xs uppercase tracking-widest text-on-surface-variant mb-6 font-medium">
               Total Balance
@@ -171,7 +171,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Income Card */}
-        <div className="md:col-span-3 lg:col-span-3 bg-surface-container-low p-8 rounded-[1.5rem] transition-all hover:shadow-sm">
+        <div className="md:col-span-3 lg:col-span-3 bg-surface-container-low p-8 rounded-[1.5rem] transition-all duration-300 hover:shadow-md animate-slide-up stagger-2 hover:-translate-y-1 hover:scale-[1.01] ease-out" style={{ animationFillMode: "both" }}>
           <p className="text-xs uppercase tracking-widest text-on-surface-variant mb-4 font-medium">Income</p>
           <h3 className="text-3xl font-bold tracking-tight text-on-surface mb-3">
             {formatCurrency(summary.totalIncome, currency)}
@@ -185,7 +185,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Expenses Card */}
-        <div className="md:col-span-3 lg:col-span-4 bg-surface-container-low p-8 rounded-[1.5rem] transition-all hover:shadow-sm">
+        <div className="md:col-span-3 lg:col-span-4 bg-surface-container-low p-8 rounded-[1.5rem] transition-all duration-300 hover:shadow-md animate-slide-up stagger-3 hover:-translate-y-1 hover:scale-[1.01] ease-out" style={{ animationFillMode: "both" }}>
           <p className="text-xs uppercase tracking-widest text-on-surface-variant mb-4 font-medium">Expenses</p>
           <h3 className="text-3xl font-bold tracking-tight text-on-surface mb-3">
             {formatCurrency(summary.totalExpenses, currency)}
@@ -202,7 +202,7 @@ export default function DashboardPage() {
       {/* Trends Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
         {/* Spending Trends Chart */}
-        <div className="lg:col-span-2 bg-surface-container-lowest p-8 rounded-[1.5rem] shadow-sm flex flex-col">
+        <div className="lg:col-span-2 bg-surface-container-lowest p-8 rounded-[1.5rem] shadow-sm flex flex-col animate-slide-up stagger-4 hover:-translate-y-0.5 transition-all duration-300 ease-out" style={{ animationFillMode: "both" }}>
           <div className="flex justify-between items-center mb-10">
             <h4 className="text-xl font-bold tracking-tight text-on-surface">Spending Trends</h4>
             <div className="flex gap-4">
@@ -244,7 +244,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Category Breakdown */}
-        <div className="bg-surface-container p-8 rounded-[1.5rem] flex flex-col">
+        <div className="bg-surface-container p-8 rounded-[1.5rem] flex flex-col animate-slide-up stagger-5 hover:-translate-y-0.5 transition-all duration-300 ease-out" style={{ animationFillMode: "both" }}>
           <h4 className="text-xl font-bold tracking-tight text-on-surface mb-8">Category Breakdown</h4>
           {summary.categories.length === 0 ? (
             <p className="text-sm text-on-surface-variant py-8 text-center">No expense data yet.</p>
@@ -275,7 +275,7 @@ export default function DashboardPage() {
       {/* Bottom Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Budget Health */}
-        <div className="bg-surface-container-low p-8 rounded-[1.5rem] flex items-center justify-between">
+        <div className="bg-surface-container-low p-8 rounded-[1.5rem] flex items-center justify-between animate-slide-up stagger-6 hover:-translate-y-0.5 transition-all duration-300 ease-out" style={{ animationFillMode: "both" }}>
           <div>
             <h5 className="text-lg font-bold mb-1 text-on-surface">Budget Health</h5>
             <p className="text-sm text-on-surface-variant">
@@ -296,7 +296,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Recent Transactions */}
-        <div className="bg-surface-container-lowest p-8 rounded-[1.5rem] shadow-sm">
+        <div className="bg-surface-container-lowest p-8 rounded-[1.5rem] shadow-sm animate-slide-up stagger-6 hover:-translate-y-0.5 transition-all duration-300 ease-out" style={{ animationFillMode: "both" }}>
           <h5 className="text-lg font-bold mb-4 text-on-surface">Recent Transactions</h5>
           {summary.recentTransactions.length === 0 ? (
             <p className="text-sm text-on-surface-variant py-4 text-center">No transactions yet.</p>

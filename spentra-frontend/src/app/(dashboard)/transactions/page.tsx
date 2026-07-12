@@ -139,7 +139,7 @@ export default function TransactionsPage() {
             <button
               key={type}
               onClick={() => setFilterType(type)}
-              className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+              className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:scale-[1.03] active:scale-[0.97] ${
                 filterType === type
                   ? 'bg-on-surface text-surface'
                   : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container'
@@ -188,7 +188,7 @@ export default function TransactionsPage() {
             <button
               key={tx.id}
               onClick={() => handleEdit(tx)}
-              className={`w-full text-left bg-surface-container-lowest p-5 rounded-[1.5rem] shadow-sm hover:shadow-md transition-all cursor-pointer active:scale-[0.99] animate-slide-up stagger-${Math.min(i + 1, 6)}`}
+              className={`w-full text-left bg-surface-container-lowest p-5 rounded-[1.5rem] shadow-sm hover:shadow-md hover:-translate-y-0.5 hover:scale-[1.005] transition-all duration-300 ease-out cursor-pointer active:scale-[0.99] animate-slide-up stagger-${Math.min(i + 1, 6)}`}
               style={{ animationFillMode: 'both' }}
             >
               <div className="flex items-center gap-4">

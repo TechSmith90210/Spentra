@@ -39,18 +39,17 @@ export function formatInputAmount(value: string, currencyCode: string = 'INR'): 
   const rawValue = isNegative ? value.slice(1) : value;
   
   const [int, dec] = rawValue.split('.');
-  if (!int && isNegative) return '-';
   
   const parsedInt = parseInt(int, 10);
   const locale = currencyCode === 'INR' ? 'en-IN' : 'en-US';
-  let formattedInt = isNaN(parsedInt) ? '' : new Intl.NumberFormat(locale).format(parsedInt);
+  const formattedInt = isNaN(parsedInt) ? '' : new Intl.NumberFormat(locale).format(parsedInt);
   
-  if (isNegative && formattedInt) formattedInt = '-' + formattedInt;
+  const sign = isNegative ? '-' : '';
   
   if (value.includes('.')) {
-    return `${formattedInt}.${dec || ''}`;
+    return `${sign}${formattedInt}.${dec || ''}`;
   }
-  return formattedInt || (isNegative ? '-' : '');
+  return formattedInt ? `${sign}${formattedInt}` : sign;
 }
 
 /* ─── Date Formatting ───────────────────────────────────────────────────────── */

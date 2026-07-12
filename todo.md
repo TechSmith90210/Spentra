@@ -59,9 +59,9 @@ public interface CategoryRepository extends JpaRepository<Category, UUID> {
 Add support for incoming credits (salary, transfers) and outgoing expenses, along with dates.
 
 ### 📝 Tasks
-- [ ] Create a `TransactionType` enum (`EXPENSE`, `CREDIT`).
-- [ ] Add the `type` and `transactionDate` fields to [Expense](file:///Users/salman/development/Spentra/spentra-backend/src/main/java/com/spentra/backend/model/entity/Expense.java) (or refactor entity name to `Transaction`).
-- [ ] Expose fields in request/response DTOs.
+- [x] Create a `TransactionType` enum (`EXPENSE`, `CREDIT`).
+- [x] Add the `type` and `transactionDate` fields to [Expense](file:///Users/salman/development/Spentra/spentra-backend/src/main/java/com/spentra/backend/model/entity/Expense.java) (or refactor entity name to `Transaction`).
+- [x] Expose fields in request/response DTOs.
 
 ### 💡 Spring Boot Code Snippets
 
@@ -146,9 +146,9 @@ public interface ExpenseRepository extends JpaRepository<Expense, UUID> {
 Automate transactions that occur regularly (e.g. Netflix subscription, monthly salary).
 
 ### 📝 Tasks
-- [ ] Create a `RecurrencePeriod` enum (`NONE`, `DAILY`, `WEEKLY`, `MONTHLY`, `YEARLY`).
-- [ ] Add `recurrence` and `isRecurring` flags to your transactions.
-- [ ] Write a scheduled background runner in Spring Boot.
+- [x] Create a `RecurrencePeriod` enum (`NONE`, `DAILY`, `WEEKLY`, `MONTHLY`, `YEARLY`).
+- [x] Add `recurrence` and `isRecurring` flags to your transactions.
+- [x] Write a scheduled background runner in Spring Boot.
 
 ### 💡 Spring Boot Code Snippets
 
