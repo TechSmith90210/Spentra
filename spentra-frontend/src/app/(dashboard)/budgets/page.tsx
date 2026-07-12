@@ -6,7 +6,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, Plus, PieChart, Repeat, AlertTriangle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, PieChart, Repeat, AlertTriangle, Edit2, Pencil } from 'lucide-react';
 import { getBudgetSummary, setBudget } from '@/lib/api/budgets';
 import { getTransactions } from '@/lib/api/transactions';
 import { getCategories } from '@/lib/api/categories';
@@ -31,6 +31,7 @@ export default function BudgetsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showAddBudget, setShowAddBudget] = useState(false);
+  const [editingBudget, setEditingBudget] = useState<BudgetSummary | null>(null);
 
   async function fetchData() {
     setLoading(true);
@@ -125,7 +126,7 @@ export default function BudgetsPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {budgets.map((budget) => {
+            {budgets.map((budget, i) => {
               const percentage = budget.amountLimit > 0
                 ? Math.round((budget.actualSpent / budget.amountLimit) * 100)
                 : 0;
@@ -133,17 +134,30 @@ export default function BudgetsPage() {
               return (
                 <div
                   key={budget.budgetId}
-                  className={`bg-surface-container-lowest p-6 rounded-[1.5rem] shadow-sm transition-all ${
+                  className={`bg-surface-container-lowest p-6 rounded-[1.5rem] shadow-sm transition-all duration-300 hover:-translate-y-1 hover:scale-[1.01] hover:shadow-md animate-slide-up stagger-${Math.min(i + 1, 6)} ${
                     budget.isExceeded ? 'ring-1 ring-error/20' : ''
                   }`}
+                  style={{ animationFillMode: "both" }}
                 >
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-sm font-semibold text-on-surface">
                       {budget.categoryName}
                     </h3>
-                    {budget.isExceeded && (
-                      <AlertTriangle className="w-4 h-4 text-error" />
-                    )}
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          setEditingBudget(budget);
+                          setShowAddBudget(true);
+                        }}
+                        className="p-1 rounded-md hover:bg-surface-container transition-all cursor-pointer text-on-surface-variant hover:text-on-surface active:scale-95"
+                        title="Edit Budget"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      {budget.isExceeded && (
+                        <AlertTriangle className="w-4 h-4 text-error" />
+                      )}
+                    </div>
                   </div>
 
                   <ProgressBar
@@ -173,8 +187,8 @@ export default function BudgetsPage() {
 
             {/* Add Budget Card */}
             <button
-              onClick={() => setShowAddBudget(true)}
-              className="border-2 border-dashed border-outline-variant/30 rounded-[1.5rem] p-6 flex flex-col items-center justify-center gap-3 hover:border-tertiary/40 hover:bg-tertiary/5 transition-all cursor-pointer min-h-[192px] active:scale-[0.98]"
+              onClick={() => { setEditingBudget(null); setShowAddBudget(true); }}
+              className="border-2 border-dashed border-outline-variant/30 rounded-[1.5rem] p-6 flex flex-col items-center justify-center gap-3 hover:border-tertiary/40 hover:bg-tertiary/5 hover:-translate-y-1 hover:scale-[1.01] hover:shadow-sm transition-all duration-300 ease-out cursor-pointer min-h-[192px] active:scale-[0.98]"
             >
               <div className="w-12 h-12 rounded-full bg-surface-container-low flex items-center justify-center">
                 <Plus className="w-6 h-6 text-on-surface-variant" />
@@ -234,10 +248,11 @@ export default function BudgetsPage() {
       {/* Set Budget Modal */}
       <SetBudgetModal
         isOpen={showAddBudget}
-        onClose={() => setShowAddBudget(false)}
+        onClose={() => { setShowAddBudget(false); setEditingBudget(null); }}
         categories={categories}
         month={month}
-        onSuccess={() => { setShowAddBudget(false); fetchData(); }}
+        onSuccess={() => { setShowAddBudget(false); setEditingBudget(null); fetchData(); }}
+        budget={editingBudget}
       />
     </div>
   );
@@ -250,12 +265,14 @@ function SetBudgetModal({
   categories,
   month,
   onSuccess,
+  budget,
 }: {
   isOpen: boolean;
   onClose: () => void;
   categories: Category[];
   month: string;
   onSuccess: () => void;
+  budget: BudgetSummary | null;
 }) {
   const { currency } = useSettings();
   const [categoryId, setCategoryId] = useState('');
@@ -265,11 +282,16 @@ function SetBudgetModal({
 
   useEffect(() => {
     if (isOpen) {
-      setCategoryId('');
-      setAmountLimit('');
+      if (budget) {
+        setCategoryId(budget.categoryId || '');
+        setAmountLimit(budget.amountLimit.toString());
+      } else {
+        setCategoryId('');
+        setAmountLimit('');
+      }
       setError('');
     }
-  }, [isOpen]);
+  }, [isOpen, budget]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -297,7 +319,7 @@ function SetBudgetModal({
   ];
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Set Budget" size="sm">
+    <Modal isOpen={isOpen} onClose={onClose} title={budget ? "Edit Budget" : "Set Budget"} size="sm">
       {error && (
         <div className="mb-4 px-4 py-3 bg-error-container/20 text-on-error-container rounded-xl text-sm">
           {error}
@@ -329,7 +351,7 @@ function SetBudgetModal({
           Budget for: <span className="font-semibold text-on-surface">{formatMonth(month)}</span>
         </p>
         <Button type="submit" variant="primary" fullWidth loading={loading}>
-          Set Budget
+          {budget ? "Update Budget" : "Set Budget"}
         </Button>
       </form>
     </Modal>
