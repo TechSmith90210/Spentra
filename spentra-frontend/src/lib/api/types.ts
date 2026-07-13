@@ -25,6 +25,7 @@ export interface AuthResponse {
   token: string;
   email: string;
   name: string;
+  profilePic?: string;
 }
 
 /* ─── Categories ────────────────────────────────────────────────────────────── */
