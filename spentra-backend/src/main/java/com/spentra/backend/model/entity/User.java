@@ -54,5 +54,10 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private AuthProvider provider = AuthProvider.LOCAL;
-}
 
+    /**
+     * Profile picture URL or identifier of the user.
+     */
+    @Column(name = "profile_pic", nullable = true)
+    private String profilePic;
+}

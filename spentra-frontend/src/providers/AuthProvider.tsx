@@ -16,6 +16,7 @@ import type { AuthRequest, SignUpRequest } from '@/lib/api/types';
 interface User {
   email: string;
   name: string;
+  profilePic?: string;
 }
 
 interface AuthContextValue {
@@ -23,6 +24,7 @@ interface AuthContextValue {
   token: string | null;
   login: (data: AuthRequest) => Promise<void>;
   signup: (data: SignUpRequest) => Promise<void>;
+  updateUser: (name: string, profilePic?: string) => void;
   logout: () => void;
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -65,13 +67,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(async (data: AuthRequest) => {
     const response = await apiLogin(data);
-    persistAuth(response.token, { email: response.email, name: response.name });
+    persistAuth(response.token, {
+      email: response.email,
+      name: response.name,
+      profilePic: response.profilePic,
+    });
   }, [persistAuth]);
 
   const signup = useCallback(async (data: SignUpRequest) => {
     const response = await apiSignup(data);
-    persistAuth(response.token, { email: response.email, name: response.name });
+    persistAuth(response.token, {
+      email: response.email,
+      name: response.name,
+      profilePic: response.profilePic,
+    });
   }, [persistAuth]);
+
+  const updateUser = useCallback((name: string, profilePic?: string) => {
+    setUser((prev) => {
+      if (!prev) return null;
+      const updated = { ...prev, name, profilePic };
+      localStorage.setItem(USER_KEY, JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
 
   const logout = useCallback(() => {
     localStorage.removeItem(TOKEN_KEY);
@@ -87,6 +106,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         token,
         login,
         signup,
+        updateUser,
         logout,
         isAuthenticated: !!token,
         isLoading,

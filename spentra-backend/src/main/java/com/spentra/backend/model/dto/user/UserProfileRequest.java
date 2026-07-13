@@ -1,4 +1,4 @@
-package com.spentra.backend.model.dto.auth;
+package com.spentra.backend.model.dto.user;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -7,9 +7,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class LoginResponse {
-    private String token;
-    private String email;
+public class UserProfileRequest {
     private String name;
     private String profilePic;
 }

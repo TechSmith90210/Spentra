@@ -45,7 +45,7 @@ public class AuthService {
 
         String token = jwtService.generateToken(savedUser.getId().toString(), signupRequest.getEmail());
 
-        return new SignupResponse(token, savedUser.getName(), savedUser.getEmail());
+        return new SignupResponse(token, savedUser.getName(), savedUser.getEmail(), savedUser.getProfilePic());
     }
 
     // login
@@ -67,7 +67,8 @@ public class AuthService {
                 return new LoginResponse(
                         token,
                         fetchedUser.getEmail(),
-                        fetchedUser.getName());
+                        fetchedUser.getName(),
+                        fetchedUser.getProfilePic());
             }
         } else {
             throw new ApiRequestException("User not found", HttpStatus.NOT_FOUND);
