@@ -35,6 +35,9 @@ public class CategoryService {
      * @throws ApiRequestException if the user is not found or unauthenticated
      */
     private User getCurrentUser() {
+        if (SecurityContextHolder.getContext().getAuthentication() == null) {
+            throw new ApiRequestException("Unauthenticated request", HttpStatus.UNAUTHORIZED);
+        }
         String userIdStr = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         if (userIdStr == null) {
             throw new ApiRequestException("Unauthenticated request", HttpStatus.UNAUTHORIZED);
