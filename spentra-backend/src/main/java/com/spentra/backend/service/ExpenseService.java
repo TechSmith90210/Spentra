@@ -43,6 +43,9 @@ public class ExpenseService {
      * @throws ApiRequestException if the user is unauthenticated or not found
      */
     private User getCurrentUser() {
+        if (SecurityContextHolder.getContext().getAuthentication() == null) {
+            throw new ApiRequestException("Unauthenticated request", HttpStatus.UNAUTHORIZED);
+        }
         String userIdStr = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         if (userIdStr == null) {
             throw new ApiRequestException("Unauthenticated request", HttpStatus.UNAUTHORIZED);

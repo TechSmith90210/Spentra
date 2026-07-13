@@ -9,6 +9,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.List;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.core.Authentication;
@@ -56,6 +57,11 @@ class ExpenseServiceTest {
         SecurityContextHolder.setContext(securityContext);
 
         when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
     }
 
     @Test
