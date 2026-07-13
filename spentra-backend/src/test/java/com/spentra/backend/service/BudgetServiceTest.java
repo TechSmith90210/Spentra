@@ -54,14 +54,18 @@ class BudgetServiceTest {
         testUser.setId(userId);
         testUser.setEmail("test@example.com");
 
-        // Mock security context
-        SecurityContext securityContext = mock(SecurityContext.class);
-        Authentication authentication = mock(Authentication.class);
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getPrincipal()).thenReturn(userId.toString());
-        SecurityContextHolder.setContext(securityContext);
+        // Set real security context with test principal
+        SecurityContextHolder.setContext(SecurityContextHolder.createEmptyContext());
+        SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(userId.toString(), null, List.of())
+        );
 
         when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+    }
+
+    @org.junit.jupiter.api.AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
     }
 
     @Test
