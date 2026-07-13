@@ -2,3 +2,8 @@
 **Vulnerability:** In `RateLimitingFilter.java`, a `ConcurrentHashMap` stored token buckets for each client IP address without any mechanism for expiration, pruning, or size limitation. This allowed an attacker or scanner using multiple IPs to consume memory indefinitely, resulting in an OutOfMemoryError (OOM) and causing a Denial of Service (DoS) of the backend.
 **Learning:** Rate-limiting structures that store per-IP/per-user state in-memory must be bound or periodically pruned. Standard `ConcurrentHashMap` does not evict inactive keys.
 **Prevention:** Implement a scheduled eviction task (e.g., using `@Scheduled`) to remove inactive entries, or use self-expiring cache libraries (e.g., Caffeine, Guava) with set maximum size limits and time-to-idle/time-to-live expiration policies.
+
+## 2026-07-13 - [Restrictive Password Regex Reducing Entropy]
+**Vulnerability:** The `@Pattern` regex used to validate `password` and `confirmPassword` in `SignupRequest.java` (`^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$`) strictly restricted passwords to only alphanumeric characters. This prevented users from choosing strong, high-entropy passwords with special characters/symbols (e.g. `!`, `@`, `#`), and blocked standard password managers from generating secure credentials.
+**Learning:** Overly restrictive password complexity filters that whitelist specific alphanumeric-only charsets actively undermine security by capping password entropy.
+**Prevention:** Allow any characters in password patterns (using lookaheads for basic complexity requirements if needed, such as `^(?=.*[A-Za-z])(?=.*\d).{8,}$`), or enforce length-only validation (e.g., 8+ or 12+ characters) without charset restrictions, as recommended by OWASP and NIST ASVS guidelines.
