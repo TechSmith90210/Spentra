@@ -1,0 +1,4 @@
+## 2026-07-12 - [Unbounded Rate Limiting Map Memory Leak]
+**Vulnerability:** In `RateLimitingFilter.java`, a `ConcurrentHashMap` stored token buckets for each client IP address without any mechanism for expiration, pruning, or size limitation. This allowed an attacker or scanner using multiple IPs to consume memory indefinitely, resulting in an OutOfMemoryError (OOM) and causing a Denial of Service (DoS) of the backend.
+**Learning:** Rate-limiting structures that store per-IP/per-user state in-memory must be bound or periodically pruned. Standard `ConcurrentHashMap` does not evict inactive keys.
+**Prevention:** Implement a scheduled eviction task (e.g., using `@Scheduled`) to remove inactive entries, or use self-expiring cache libraries (e.g., Caffeine, Guava) with set maximum size limits and time-to-idle/time-to-live expiration policies.
