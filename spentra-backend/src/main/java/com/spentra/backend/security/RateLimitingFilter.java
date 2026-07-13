@@ -3,6 +3,7 @@ package com.spentra.backend.security;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -15,6 +16,18 @@ public class RateLimitingFilter implements Filter {
 
     // Map to store token buckets for each IP address
     private final Map<String, TokenBucket> buckets = new ConcurrentHashMap<>();
+
+    // Package-private getter for testing
+    Map<String, TokenBucket> getBuckets() {
+        return buckets;
+    }
+
+    // Clean up inactive rate limiting buckets to prevent memory leaks and DoS/OOM issues
+    @Scheduled(fixedRate = 3600000) // Run every hour
+    public void pruneBuckets() {
+        Instant oneHourAgo = Instant.now().minusSeconds(3600);
+        buckets.entrySet().removeIf(entry -> entry.getValue().getLastRefillTime().isBefore(oneHourAgo));
+    }
 
     // Rate limit configuration
     private static final long BUCKET_CAPACITY = 100; // Max burst requests
@@ -69,7 +82,7 @@ public class RateLimitingFilter implements Filter {
     }
 
     // Inner class representing a Token Bucket for a single client
-    private static class TokenBucket {
+    static class TokenBucket {
         private final long capacity;
         private double tokens;
         private Instant lastRefillTime;
@@ -78,6 +91,14 @@ public class RateLimitingFilter implements Filter {
             this.capacity = capacity;
             this.tokens = capacity;
             this.lastRefillTime = Instant.now();
+        }
+
+        public Instant getLastRefillTime() {
+            return lastRefillTime;
+        }
+
+        void setLastRefillTime(Instant lastRefillTime) {
+            this.lastRefillTime = lastRefillTime;
         }
 
         public synchronized boolean tryConsume() {

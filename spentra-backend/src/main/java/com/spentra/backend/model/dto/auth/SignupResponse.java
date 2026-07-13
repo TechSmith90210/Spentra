@@ -15,4 +15,6 @@ public class SignupResponse {
     String name;
 
     String email;
+
+    String profilePic;
 }
