@@ -1,9 +1,9 @@
 /**
- * @file Spentra Landing Page — Beautiful, clean, and user-friendly landing page for visitors.
+ * @file Spentra Landing Page — Beautiful, clean, and mobile-optimized landing page.
  *
  * Features a high-contrast hero section with glowing ASCII art,
  * an interactive Terminal Sandbox to try Spentra live with real-time visual charting,
- * a clean bento grid of core benefits, and smooth transitions.
+ * a clean bento grid of core benefits, and smooth transitions. Fully mobile-responsive.
  */
 
 'use client';
@@ -239,7 +239,7 @@ export default function LandingPage() {
 
       {/* FIXED LANDING NAVBAR */}
       <header className="fixed top-0 w-full z-50 bg-surface/30 backdrop-blur-[24px] backdrop-saturate-[180%] border-b border-outline-variant/10 shadow-[0_4px_30px_rgba(0,0,0,0.03)]">
-        <nav className="max-w-7xl mx-auto h-16 px-6 flex items-center justify-between">
+        <nav className="max-w-7xl mx-auto h-16 px-4 sm:px-6 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
             <svg width="28" height="28" viewBox="0 0 32 32" fill="none" className="text-on-surface">
               <path d="M16 4L4 10V22L16 28L28 22V10L16 4Z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" />
@@ -249,15 +249,15 @@ export default function LandingPage() {
             <span className="text-lg font-black tracking-tighter text-on-surface">Spentra</span>
           </Link>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             <ThemeToggle />
             <Link href="/login">
-              <Button variant="secondary" size="sm">
+              <Button variant="secondary" size="sm" className="px-2.5 sm:px-4 py-1.5 text-xs">
                 Sign In
               </Button>
             </Link>
             <Link href="/signup">
-              <Button variant="primary" size="sm">
+              <Button variant="primary" size="sm" className="px-2.5 sm:px-4 py-1.5 text-xs">
                 Get Started
               </Button>
             </Link>
@@ -266,41 +266,41 @@ export default function LandingPage() {
       </header>
 
       {/* HERO SECTION */}
-      <section className="pt-32 pb-24 px-6 max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10">
+      <section className="pt-28 sm:pt-36 pb-20 px-6 max-w-7xl mx-auto w-full grid grid-cols-1 md:grid-cols-12 gap-12 items-center relative z-10">
         {/* Left copy */}
-        <div className="lg:col-span-7 space-y-6 animate-slide-up">
+        <div className="md:col-span-12 lg:col-span-7 space-y-6 text-center lg:text-left animate-slide-up">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-surface-container-high text-on-surface-variant rounded-full text-xs font-bold uppercase tracking-wider">
             <Sparkles className="w-3.5 h-3.5 text-tertiary" />
             <span>Effortless Expense Tracking</span>
           </div>
 
-          <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight leading-[1.05] text-on-surface">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight leading-[1.1] sm:leading-[1.05] text-on-surface">
             Financial Clarity, <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-tertiary to-tertiary-container">
               Simplified.
             </span>
           </h1>
 
-          <p className="text-lg text-on-surface-variant max-w-xl leading-relaxed">
+          <p className="text-base sm:text-lg text-on-surface-variant max-w-xl mx-auto lg:mx-0 leading-relaxed">
             Spentra is a clean, lightning-fast expense tracker. Focus on your daily money habits with beautiful real-time insights, automated budget alerts, and clean visual statistics to give you absolute control over your money.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 pt-4">
-            <Link href="/signup">
-              <Button variant="primary" size="lg" className="shadow-md">
+          <div className="flex flex-col sm:flex-row gap-4 pt-4 justify-center lg:justify-start">
+            <Link href="/signup" className="w-full sm:w-auto">
+              <Button variant="primary" size="lg" className="w-full sm:w-auto shadow-md">
                 Start Tracking Free <ArrowRight className="w-4 h-4 ml-1" />
               </Button>
             </Link>
-            <a href="#sandbox">
-              <Button variant="secondary" size="lg">
+            <a href="#sandbox" className="w-full sm:w-auto">
+              <Button variant="secondary" size="lg" className="w-full sm:w-auto">
                 Try Sandbox Console
               </Button>
             </a>
           </div>
         </div>
 
-        {/* Right graphic — Gorgeous isometric ASCII logo */}
-        <div className="lg:col-span-5 flex justify-center items-center animate-fade-in delay-200">
+        {/* Right graphic — Gorgeous isometric ASCII logo (Hidden on mobile phones for optimal clutter-free UX) */}
+        <div className="hidden md:flex md:col-span-12 lg:col-span-5 justify-center items-center animate-fade-in delay-200">
           <div className="relative p-8 bg-surface-container-low rounded-[2rem] border border-outline-variant/10 shadow-lg group hover:scale-[1.02] transition-all duration-300">
             <div className="absolute inset-0 bg-gradient-to-tr from-tertiary/10 to-transparent rounded-[2rem] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             <pre className="text-tertiary font-mono text-[10px] sm:text-xs leading-tight select-none tracking-normal drop-shadow-[0_0_20px_rgba(112,115,255,0.2)]">
@@ -318,20 +318,20 @@ export default function LandingPage() {
       </section>
 
       {/* DYNAMIC SANDBOX TERMINAL SECTION */}
-      <section id="sandbox" className="py-24 px-6 bg-surface-container-lowest/50 border-y border-outline-variant/10 relative z-10 scroll-mt-16">
+      <section id="sandbox" className="py-16 sm:py-24 px-4 sm:px-6 bg-surface-container-lowest/50 border-y border-outline-variant/10 relative z-10 scroll-mt-16">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center max-w-2xl mx-auto mb-16 space-y-4">
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-on-surface">
+          <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16 space-y-4">
+            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-on-surface">
               Interactive Sandbox
             </h2>
-            <p className="text-on-surface-variant leading-relaxed">
+            <p className="text-sm sm:text-base text-on-surface-variant leading-relaxed">
               Try Spentra live. Add mock income and expenses below to see how our interactive sandbox automatically updates your balance and plots a clean visual chart.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-stretch">
             {/* Control Panel / Presets */}
-            <div className="lg:col-span-4 flex flex-col justify-between bg-surface-container-low p-8 rounded-3xl border border-outline-variant/10">
+            <div className="lg:col-span-4 flex flex-col justify-between bg-surface-container-low p-6 sm:p-8 rounded-3xl border border-outline-variant/10">
               <div className="space-y-6">
                 <div>
                   <h3 className="text-lg font-bold text-on-surface mb-1">Quick Sandbox Simulator</h3>
@@ -341,29 +341,29 @@ export default function LandingPage() {
                 {/* Preset Trigger buttons */}
                 <div className="space-y-2.5">
                   <p className="text-xs uppercase font-bold tracking-wider text-on-surface-variant">Preset Actions</p>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <button
                       onClick={() => handleInjectPreset({ title: 'Bonus Injected', amount: 150, type: 'CREDIT', category: 'salary' })}
-                      className="flex items-center gap-2 p-3 rounded-xl bg-surface hover:bg-surface-container-high border border-outline-variant/5 text-xs font-semibold text-income cursor-pointer active:scale-95 transition-all text-left"
+                      className="flex items-center gap-2 p-2.5 rounded-xl bg-surface hover:bg-surface-container-high border border-outline-variant/5 text-xs font-semibold text-income cursor-pointer active:scale-95 transition-all text-left"
                     >
                       <Plus className="w-3.5 h-3.5 shrink-0" />
                       <span>+ $150 Bonus</span>
                     </button>
                     <button
                       onClick={() => handleInjectPreset({ title: 'Uber Ride', amount: 25, type: 'EXPENSE', category: 'transport' })}
-                      className="flex items-center gap-2 p-3 rounded-xl bg-surface hover:bg-surface-container-high border border-outline-variant/5 text-xs font-semibold text-error cursor-pointer active:scale-95 transition-all text-left"
+                      className="flex items-center gap-2 p-2.5 rounded-xl bg-surface hover:bg-surface-container-high border border-outline-variant/5 text-xs font-semibold text-error cursor-pointer active:scale-95 transition-all text-left"
                     >
                       <span>- $25 Uber</span>
                     </button>
                     <button
                       onClick={() => handleInjectPreset({ title: 'Burger Dinner', amount: 35, type: 'EXPENSE', category: 'food' })}
-                      className="flex items-center gap-2 p-3 rounded-xl bg-surface hover:bg-surface-container-high border border-outline-variant/5 text-xs font-semibold text-error cursor-pointer active:scale-95 transition-all text-left"
+                      className="flex items-center gap-2 p-2.5 rounded-xl bg-surface hover:bg-surface-container-high border border-outline-variant/5 text-xs font-semibold text-error cursor-pointer active:scale-95 transition-all text-left"
                     >
                       <span>- $35 Dinner</span>
                     </button>
                     <button
                       onClick={() => handleInjectPreset({ title: 'Double Espresso', amount: 8, type: 'EXPENSE', category: 'coffee' })}
-                      className="flex items-center gap-2 p-3 rounded-xl bg-surface hover:bg-surface-container-high border border-outline-variant/5 text-xs font-semibold text-error cursor-pointer active:scale-95 transition-all text-left"
+                      className="flex items-center gap-2 p-2.5 rounded-xl bg-surface hover:bg-surface-container-high border border-outline-variant/5 text-xs font-semibold text-error cursor-pointer active:scale-95 transition-all text-left"
                     >
                       <span>- $8 Coffee</span>
                     </button>
@@ -388,7 +388,7 @@ export default function LandingPage() {
                         placeholder="Amount"
                         value={inputAmount}
                         onChange={e => setInputAmount(e.target.value)}
-                        className="flex-1 px-3.5 py-2.5 bg-surface text-xs rounded-xl border border-outline-variant/20 focus:outline-none focus:border-tertiary transition-colors"
+                        className="flex-1 min-w-0 px-3.5 py-2.5 bg-surface text-xs rounded-xl border border-outline-variant/20 focus:outline-none focus:border-tertiary transition-colors"
                         required
                         min="1"
                       />
@@ -420,7 +420,7 @@ export default function LandingPage() {
             </div>
 
             {/* Simulated Live Terminal */}
-            <div className="lg:col-span-8 bg-surface-container-lowest border border-outline-variant/15 rounded-3xl p-6 shadow-md flex flex-col justify-between overflow-hidden relative">
+            <div className="lg:col-span-8 bg-surface-container-lowest border border-outline-variant/15 rounded-3xl p-4 sm:p-6 shadow-md flex flex-col justify-between overflow-hidden relative">
               {/* Terminal header */}
               <div className="flex items-center justify-between border-b border-outline-variant/10 pb-4 mb-4">
                 <div className="flex items-center gap-1.5">
@@ -437,8 +437,8 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              {/* Balance Summary Header Inside Terminal */}
-              <div className="grid grid-cols-3 gap-4 bg-surface-container-low/60 rounded-2xl p-4 mb-6 font-mono border border-outline-variant/5">
+              {/* Balance Summary Header Inside Terminal (Responsive grid stacking) */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 bg-surface-container-low/60 rounded-2xl p-4 mb-6 font-mono border border-outline-variant/5">
                 <div>
                   <div className="text-[10px] text-on-surface-variant uppercase">Balance</div>
                   <div className={`text-lg font-bold ${totals.balance >= 0 ? 'text-income' : 'text-error'}`}>
@@ -462,12 +462,12 @@ export default function LandingPage() {
               {/* Terminal Output Layout Grid (ASCII Chart + Live Ledger list) */}
               <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start flex-grow">
                 {/* ASCII Chart */}
-                <div className="md:col-span-7 font-mono flex flex-col">
+                <div className="md:col-span-7 font-mono flex flex-col overflow-hidden">
                   <div className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-2">
                     Your Spending Trend (ASCII)
                   </div>
                   <div className="bg-surface-dim/40 dark:bg-black/40 p-4 rounded-2xl border border-outline-variant/10 text-[10px] sm:text-xs overflow-x-auto text-tertiary select-none leading-relaxed">
-                    <pre className="whitespace-pre font-mono">{asciiChart}</pre>
+                    <pre className="whitespace-pre font-mono min-w-[380px] sm:min-w-0">{asciiChart}</pre>
                   </div>
                 </div>
 
@@ -517,19 +517,19 @@ export default function LandingPage() {
       </section>
 
       {/* CORE BENEFITS GRID */}
-      <section className="py-24 px-6 max-w-7xl mx-auto w-full relative z-10">
-        <div className="text-center max-w-2xl mx-auto mb-20 space-y-4">
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-on-surface">
+      <section className="py-20 sm:py-24 px-6 max-w-7xl mx-auto w-full relative z-10">
+        <div className="text-center max-w-2xl mx-auto mb-16 sm:mb-20 space-y-4">
+          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-on-surface">
             Built for Seamless Simplicity
           </h2>
-          <p className="text-on-surface-variant leading-relaxed">
+          <p className="text-sm sm:text-base text-on-surface-variant leading-relaxed">
             Spentra is built to be fast, beautiful, and completely secure. No clutter, just the features you need to master your personal finance.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Card 1 */}
-          <div className="bg-surface-container-low p-8 rounded-3xl border border-outline-variant/10 shadow-sm hover:scale-[1.01] hover:shadow-md transition-all duration-300 flex flex-col justify-between">
+          <div className="bg-surface-container-low p-6 sm:p-8 rounded-3xl border border-outline-variant/10 shadow-sm hover:scale-[1.01] hover:shadow-md transition-all duration-300 flex flex-col justify-between">
             <div className="space-y-4">
               <span className="inline-flex p-3 bg-tertiary/10 text-tertiary rounded-2xl">
                 <Shield className="w-6 h-6" />
@@ -547,7 +547,7 @@ export default function LandingPage() {
           </div>
 
           {/* Card 2 */}
-          <div className="bg-surface-container-low p-8 rounded-3xl border border-outline-variant/10 shadow-sm hover:scale-[1.01] hover:shadow-md transition-all duration-300 flex flex-col justify-between">
+          <div className="bg-surface-container-low p-6 sm:p-8 rounded-3xl border border-outline-variant/10 shadow-sm hover:scale-[1.01] hover:shadow-md transition-all duration-300 flex flex-col justify-between">
             <div className="space-y-4">
               <span className="inline-flex p-3 bg-secondary-container/30 text-on-secondary-container rounded-2xl">
                 <Calendar className="w-6 h-6" />
@@ -565,7 +565,7 @@ export default function LandingPage() {
           </div>
 
           {/* Card 3 */}
-          <div className="bg-surface-container-low p-8 rounded-3xl border border-outline-variant/10 shadow-sm hover:scale-[1.01] hover:shadow-md transition-all duration-300 flex flex-col justify-between md:col-span-2 lg:col-span-1">
+          <div className="bg-surface-container-low p-6 sm:p-8 rounded-3xl border border-outline-variant/10 shadow-sm hover:scale-[1.01] hover:shadow-md transition-all duration-300 flex flex-col justify-between md:col-span-2 lg:col-span-1">
             <div className="space-y-4">
               <span className="inline-flex p-3 bg-error-container/20 text-on-error-container rounded-2xl">
                 <Lock className="w-6 h-6" />
@@ -585,26 +585,26 @@ export default function LandingPage() {
       </section>
 
       {/* CALL TO ACTION */}
-      <section className="py-24 px-6 relative z-10">
-        <div className="max-w-4xl mx-auto bg-gradient-to-br from-surface-container-high via-surface-container-highest to-surface-container-low rounded-[2.5rem] border border-outline-variant/15 p-8 md:p-16 text-center shadow-lg relative overflow-hidden">
+      <section className="py-12 sm:py-24 px-4 sm:px-6 relative z-10">
+        <div className="max-w-4xl mx-auto bg-gradient-to-br from-surface-container-high via-surface-container-highest to-surface-container-low rounded-[2.5rem] border border-outline-variant/15 p-6 sm:p-12 md:p-16 text-center shadow-lg relative overflow-hidden">
           {/* subtle abstract wireframe backdrop */}
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-tertiary/5 via-transparent to-transparent opacity-100 pointer-events-none" />
 
           <div className="max-w-xl mx-auto space-y-6 relative z-10">
-            <h2 className="text-4xl font-extrabold tracking-tight text-on-surface">
+            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-on-surface">
               Take control of your financial future.
             </h2>
-            <p className="text-on-surface-variant text-base leading-relaxed">
+            <p className="text-sm sm:text-base text-on-surface-variant leading-relaxed">
               Sign up today to start tracking your daily habits, managing smart budgets, and building long-term wealth with ease.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-              <Link href="/signup">
-                <Button variant="primary" size="lg" className="px-8 py-4 text-base font-bold">
+              <Link href="/signup" className="w-full sm:w-auto">
+                <Button variant="primary" size="lg" className="w-full sm:w-auto px-8 py-4 text-base font-bold">
                   Create Free Account
                 </Button>
               </Link>
-              <Link href="/login">
-                <Button variant="secondary" size="lg" className="px-8 py-4 text-base font-bold">
+              <Link href="/login" className="w-full sm:w-auto">
+                <Button variant="secondary" size="lg" className="w-full sm:w-auto px-8 py-4 text-base font-bold">
                   Sign In to Workspace
                 </Button>
               </Link>
@@ -624,7 +624,7 @@ export default function LandingPage() {
             </svg>
             <span>Spentra</span>
           </div>
-          <p>© {new Date().getFullYear()} Spentra Expense Tracker. All rights reserved.</p>
+          <p className="text-xs sm:text-sm">© {new Date().getFullYear()} Spentra Expense Tracker. All rights reserved.</p>
           <div className="flex items-center gap-6">
             <Link href="/login" className="hover:text-on-surface hover:underline underline-offset-4 transition-colors">
               Ledger
