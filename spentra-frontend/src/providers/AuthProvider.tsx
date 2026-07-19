@@ -85,7 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser((prev) => {
       if (!prev) return null;
       const updated = { ...prev, name, profilePic };
-      localStorage.setItem(USER_KEY, JSON.stringify(updated));
+      localStorage.setItem(SPENTRA_USER_KEY, JSON.stringify(updated));
       return updated;
     });
   }, []);
