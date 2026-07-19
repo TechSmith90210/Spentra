@@ -1,6 +1,7 @@
 package com.spentra.backend.scheduler;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -44,9 +45,13 @@ public class RecurringTransactionScheduler {
 
         log.info("Found {} recurring transaction templates due for execution.", dueTemplates.size());
 
+        List<Expense> occurrencesToSave = new ArrayList<>();
+        List<Expense> templatesToSave = new ArrayList<>();
+
         // 2. Loop and generate instances, advancing the next execution date
         for (Expense template : dueTemplates) {
             try {
+                List<Expense> localOccurrences = new ArrayList<>();
                 // Catch-up logic in case the server was down or start date was set in the past
                 while (template.getNextExecutionDate() != null && !template.getNextExecutionDate().isAfter(today)) {
                     LocalDate executionDate = template.getNextExecutionDate();
@@ -63,7 +68,7 @@ public class RecurringTransactionScheduler {
                     occurrence.setRecurrence(RecurrencePeriod.NONE);
                     occurrence.setNextExecutionDate(null);
 
-                    expenseRepository.save(occurrence);
+                    localOccurrences.add(occurrence);
                     log.info("Generated transaction instance '{}' for date {}.", template.getTitle(), executionDate);
 
                     // Advance the template's next execution date based on recurrence period
@@ -77,11 +82,23 @@ public class RecurringTransactionScheduler {
                     }
                 }
 
-                expenseRepository.save(template);
+                occurrencesToSave.addAll(localOccurrences);
+                templatesToSave.add(template);
             } catch (Exception e) {
                 log.error("Failed to process recurring transaction template with ID: {}", template.getId(), e);
             }
         }
+
+        // Batch save all occurrences and updated templates to optimize database operations
+        if (!occurrencesToSave.isEmpty()) {
+            expenseRepository.saveAll(occurrencesToSave);
+            log.info("Batch saved {} generated transaction occurrences.", occurrencesToSave.size());
+        }
+        if (!templatesToSave.isEmpty()) {
+            expenseRepository.saveAll(templatesToSave);
+            log.info("Batch saved {} updated transaction templates.", templatesToSave.size());
+        }
+
         log.info("Finished processing of recurring transactions.");
     }
 }
