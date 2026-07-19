@@ -9,9 +9,16 @@ import com.spentra.backend.model.dto.auth.LoginRequest;
 import com.spentra.backend.model.dto.auth.LoginResponse;
 import com.spentra.backend.model.dto.auth.SignupRequest;
 import com.spentra.backend.model.dto.auth.SignupResponse;
+import com.spentra.backend.model.dto.auth.GoogleAuthRequest;
 import com.spentra.backend.model.entity.User;
 import com.spentra.backend.repository.UserRepository;
 import com.spentra.backend.security.JwtService;
+import org.springframework.beans.factory.annotation.Value;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
+import java.util.Collections;
 
 import lombok.RequiredArgsConstructor;
 
@@ -21,6 +28,9 @@ public class AuthService {
     private final UserRepository repository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+
+    @Value("${GOOGLE_CLIENT_ID}")
+    private String googleClientId;
 
     // signup
     public SignupResponse signUp(SignupRequest signupRequest) {
@@ -75,5 +85,47 @@ public class AuthService {
         }
 
         throw new ApiRequestException("Login failed", HttpStatus.UNAUTHORIZED);
+    }
+
+    // google login
+    public LoginResponse googleLogin(GoogleAuthRequest request) {
+        try {
+            NetHttpTransport transport = new NetHttpTransport();
+            GsonFactory jsonFactory = GsonFactory.getDefaultInstance();
+
+            GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(transport, jsonFactory)
+                    .setAudience(Collections.singletonList(googleClientId))
+                    .build();
+
+            GoogleIdToken idToken = verifier.verify(request.getIdToken());
+            if (idToken != null) {
+                GoogleIdToken.Payload payload = idToken.getPayload();
+
+                String email = payload.getEmail();
+                String name = (String) payload.get("name");
+                String pictureUrl = (String) payload.get("picture");
+
+                User user = repository.findByEmail(email).orElseGet(() -> {
+                    User newUser = new User();
+                    newUser.setEmail(email);
+                    newUser.setName(name);
+                    newUser.setProvider(com.spentra.backend.model.enums.AuthProvider.GOOGLE);
+                    newUser.setProfilePic(pictureUrl);
+                    return repository.save(newUser);
+                });
+
+                String token = jwtService.generateToken(user.getId().toString(), user.getEmail());
+
+                return new LoginResponse(
+                        token,
+                        user.getEmail(),
+                        user.getName(),
+                        user.getProfilePic());
+            } else {
+                throw new ApiRequestException("Invalid Google ID Token", HttpStatus.UNAUTHORIZED);
+            }
+        } catch (Exception e) {
+            throw new ApiRequestException("Google authentication failed: " + e.getMessage(), HttpStatus.UNAUTHORIZED);
+        }
     }
 }

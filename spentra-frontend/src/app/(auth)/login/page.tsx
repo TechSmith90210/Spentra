@@ -8,13 +8,14 @@ import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { Mail, Lock } from 'lucide-react';
 import { useAuth } from '@/providers/AuthProvider';
+import { GoogleLogin } from '@react-oauth/google';
 import Button from '@/components/Button';
 import Input from '@/components/Input';
 import Link from 'next/link';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, googleLogin } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -91,6 +92,45 @@ export default function LoginPage() {
           </p>
         )}
       </form>
+
+      {/* Divider */}
+      <div className="relative my-6">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t border-outline" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-surface px-2 text-on-surface-variant font-medium">Or continue with</span>
+        </div>
+      </div>
+
+      {/* Google Login Button */}
+      <div className="flex justify-center w-full">
+        <GoogleLogin
+          onSuccess={async (credentialResponse) => {
+            if (credentialResponse.credential) {
+              setLoading(true);
+              setError('');
+              try {
+                await googleLogin(credentialResponse.credential);
+                router.push('/dashboard');
+              } catch (err: unknown) {
+                const message = err instanceof Error ? err.message : 'Google Login failed.';
+                setError(message);
+              } finally {
+                setLoading(false);
+              }
+            }
+          }}
+          onError={() => {
+            setError('Google login failed. Please try again.');
+          }}
+          theme="outline"
+          shape="rectangular"
+          size="large"
+          text="signin_with"
+          width="360"
+        />
+      </div>
 
       {/* Footer */}
       <p className="mt-8 text-center text-sm text-on-surface-variant">

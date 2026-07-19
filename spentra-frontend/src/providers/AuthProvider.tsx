@@ -9,7 +9,8 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { login as apiLogin, signup as apiSignup } from '@/lib/api/auth';
+import { GoogleOAuthProvider } from '@react-oauth/google';
+import { login as apiLogin, signup as apiSignup, googleLogin as apiGoogleLogin } from '@/lib/api/auth';
 import { getProfile } from '@/lib/api/users';
 import type { AuthRequest, SignUpRequest } from '@/lib/api/types';
 import { SPENTRA_TOKEN_KEY, SPENTRA_USER_KEY } from '@/lib/constants/auth';
@@ -26,6 +27,7 @@ interface AuthContextValue {
   token: string | null;
   login: (data: AuthRequest) => Promise<void>;
   signup: (data: SignUpRequest) => Promise<void>;
+  googleLogin: (idToken: string) => Promise<void>;
   updateUser: (name: string, profilePic?: string) => void;
   logout: () => void;
   isAuthenticated: boolean;
@@ -92,6 +94,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   }, [persistAuth]);
 
+  const googleLogin = useCallback(async (idToken: string) => {
+    const response = await apiGoogleLogin(idToken);
+    persistAuth(response.token, {
+      email: response.email,
+      name: response.name,
+      profilePic: response.profilePic,
+    });
+  }, [persistAuth]);
+
   const updateUser = useCallback((name: string, profilePic?: string) => {
     setUser((prev) => {
       if (!prev) return null;
@@ -107,20 +118,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        token,
-        login,
-        signup,
-        updateUser,
-        logout,
-        isAuthenticated: !!token,
-        isLoading,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
+    <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ''}>
+      <AuthContext.Provider
+        value={{
+          user,
+          token,
+          login,
+          signup,
+          googleLogin,
+          updateUser,
+          logout,
+          isAuthenticated: !!token,
+          isLoading,
+        }}
+      >
+        {children}
+      </AuthContext.Provider>
+    </GoogleOAuthProvider>
   );
 }
 

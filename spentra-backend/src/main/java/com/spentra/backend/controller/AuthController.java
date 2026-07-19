@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.spentra.backend.model.dto.auth.GoogleAuthRequest;
 import com.spentra.backend.model.dto.auth.LoginRequest;
 import com.spentra.backend.model.dto.auth.LoginResponse;
 import com.spentra.backend.model.dto.auth.SignupRequest;
@@ -29,5 +30,10 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
         return ResponseEntity.ok(authService.login(loginRequest));
+    }
+
+    @PostMapping("/google")
+    public ResponseEntity<LoginResponse> googleLogin(@Valid @RequestBody GoogleAuthRequest googleAuthRequest) {
+        return ResponseEntity.ok(authService.googleLogin(googleAuthRequest));
     }
 }

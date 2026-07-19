@@ -21,3 +21,11 @@ export async function signup(request: SignUpRequest): Promise<AuthResponse> {
     body: JSON.stringify(request),
   });
 }
+
+/** Authenticate or sign up a user with a Google ID Token. */
+export async function googleLogin(idToken: string): Promise<AuthResponse> {
+  return apiClient<AuthResponse>('/api/auth/google', {
+    method: 'POST',
+    body: JSON.stringify({ idToken }),
+  });
+}

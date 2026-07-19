@@ -292,12 +292,8 @@ class ExpenseServiceTest {
 
     @Test
     void testAddExpense_userNotFound() {
-        // UserRepository returns empty for the current authenticated user id
-        UUID nonExistentUserId = UUID.randomUUID();
-        SecurityContextHolder.getContext().setAuthentication(
-                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(nonExistentUserId.toString(), null, List.of())
-        );
-        when(userRepository.findById(nonExistentUserId)).thenReturn(Optional.empty());
+        // Mock getCurrentUser() throwing Exception for user not found
+        when(userService.getCurrentUser()).thenThrow(new ApiRequestException("User not found", HttpStatus.UNAUTHORIZED));
 
         ExpenseRequest req = new ExpenseRequest();
         req.setTitle("Coffee");
