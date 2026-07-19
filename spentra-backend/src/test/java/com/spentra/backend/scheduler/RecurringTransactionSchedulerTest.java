@@ -37,16 +37,18 @@ class RecurringTransactionSchedulerTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void testProcessRecurringTransactions_NoTemplates() {
         when(expenseRepository.findByIsRecurringTrueAndNextExecutionDateLessThanEqual(any(LocalDate.class)))
                 .thenReturn(new ArrayList<>());
 
         scheduler.processRecurringTransactions();
 
-        verify(expenseRepository, never()).save(any(Expense.class));
+        verify(expenseRepository, never()).saveAll(any(List.class));
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void testProcessRecurringTransactions_SingleOccurrence() {
         LocalDate today = LocalDate.now();
         User user = new User();
@@ -73,13 +75,15 @@ class RecurringTransactionSchedulerTest {
 
         scheduler.processRecurringTransactions();
 
-        ArgumentCaptor<Expense> expenseCaptor = ArgumentCaptor.forClass(Expense.class);
-        verify(expenseRepository, times(2)).save(expenseCaptor.capture());
+        ArgumentCaptor<List> expenseCaptor = ArgumentCaptor.forClass(List.class);
+        verify(expenseRepository, times(2)).saveAll(expenseCaptor.capture());
 
-        List<Expense> savedExpenses = expenseCaptor.getAllValues();
-        assertEquals(2, savedExpenses.size());
+        List<List> savedBatches = expenseCaptor.getAllValues();
+        assertEquals(2, savedBatches.size());
 
-        Expense occurrence = savedExpenses.get(0);
+        List<Expense> occurrences = savedBatches.get(0);
+        assertEquals(1, occurrences.size());
+        Expense occurrence = occurrences.get(0);
         assertEquals("Netflix", occurrence.getTitle());
         assertEquals(15.99, occurrence.getAmount());
         assertEquals(user, occurrence.getUser());
@@ -90,12 +94,15 @@ class RecurringTransactionSchedulerTest {
         assertEquals(RecurrencePeriod.NONE, occurrence.getRecurrence());
         assertNull(occurrence.getNextExecutionDate());
 
-        Expense updatedTemplate = savedExpenses.get(1);
+        List<Expense> templates = savedBatches.get(1);
+        assertEquals(1, templates.size());
+        Expense updatedTemplate = templates.get(0);
         assertEquals(template.getId(), updatedTemplate.getId());
         assertEquals(nextDate, updatedTemplate.getNextExecutionDate());
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void testProcessRecurringTransactions_CatchUpMultipleOccurrences() {
         LocalDate today = LocalDate.now();
         LocalDate twoWeeksAgo = today.minusWeeks(2);
@@ -123,28 +130,33 @@ class RecurringTransactionSchedulerTest {
 
         scheduler.processRecurringTransactions();
 
-        ArgumentCaptor<Expense> expenseCaptor = ArgumentCaptor.forClass(Expense.class);
-        verify(expenseRepository, times(4)).save(expenseCaptor.capture());
+        ArgumentCaptor<List> expenseCaptor = ArgumentCaptor.forClass(List.class);
+        verify(expenseRepository, times(2)).saveAll(expenseCaptor.capture());
 
-        List<Expense> savedExpenses = expenseCaptor.getAllValues();
-        assertEquals(4, savedExpenses.size());
+        List<List> savedBatches = expenseCaptor.getAllValues();
+        assertEquals(2, savedBatches.size());
 
-        assertEquals(twoWeeksAgo, savedExpenses.get(0).getTransactionDate());
-        assertEquals(oneWeekAgo, savedExpenses.get(1).getTransactionDate());
-        assertEquals(today, savedExpenses.get(2).getTransactionDate());
+        List<Expense> occurrences = savedBatches.get(0);
+        assertEquals(3, occurrences.size());
+        assertEquals(twoWeeksAgo, occurrences.get(0).getTransactionDate());
+        assertEquals(oneWeekAgo, occurrences.get(1).getTransactionDate());
+        assertEquals(today, occurrences.get(2).getTransactionDate());
 
         for (int i = 0; i < 3; i++) {
-            assertFalse(savedExpenses.get(i).getIsRecurring());
-            assertEquals(RecurrencePeriod.NONE, savedExpenses.get(i).getRecurrence());
-            assertNull(savedExpenses.get(i).getNextExecutionDate());
+            assertFalse(occurrences.get(i).getIsRecurring());
+            assertEquals(RecurrencePeriod.NONE, occurrences.get(i).getRecurrence());
+            assertNull(occurrences.get(i).getNextExecutionDate());
         }
 
-        Expense updatedTemplate = savedExpenses.get(3);
+        List<Expense> templates = savedBatches.get(1);
+        assertEquals(1, templates.size());
+        Expense updatedTemplate = templates.get(0);
         assertEquals(template.getId(), updatedTemplate.getId());
         assertEquals(today.plusWeeks(1), updatedTemplate.getNextExecutionDate());
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void testProcessRecurringTransactions_ServiceExceptionHandling() {
         LocalDate today = LocalDate.now();
         Expense template = new Expense();
@@ -162,6 +174,6 @@ class RecurringTransactionSchedulerTest {
 
         scheduler.processRecurringTransactions();
 
-        verify(expenseRepository, times(1)).save(any(Expense.class));
+        verify(expenseRepository, never()).saveAll(any(List.class));
     }
 }
