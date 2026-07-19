@@ -12,6 +12,7 @@ import lombok.Getter;
 
 /**
  * Data Transfer Object (DTO) representing a transaction response.
+ * Includes complete state representing the recurrence and scheduling attributes of the transaction.
  */
 @Getter
 @AllArgsConstructor
@@ -26,4 +27,3 @@ public class ExpenseResponse {
     private RecurrencePeriod recurrence;
     private LocalDate nextExecutionDate;
 }
-

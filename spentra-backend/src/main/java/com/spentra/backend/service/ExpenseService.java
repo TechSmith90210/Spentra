@@ -112,7 +112,7 @@ public class ExpenseService {
      * @return LocalDate the calculated next execution date, or null if period is NONE
      */
     public LocalDate calculateNextExecutionDate(LocalDate currentDate, RecurrencePeriod period) {
-        if (period == null || period == RecurrencePeriod.NONE) {
+        if (period == null || !period.isRecurring()) {
             return null;
         }
         switch (period) {
@@ -160,7 +160,7 @@ public class ExpenseService {
         RecurrencePeriod recPeriod = req.getRecurrence() != null ? req.getRecurrence() : RecurrencePeriod.NONE;
         expense.setRecurrence(recPeriod);
 
-        if (isRec && recPeriod != RecurrencePeriod.NONE) {
+        if (isRec && recPeriod.isRecurring()) {
             expense.setNextExecutionDate(calculateNextExecutionDate(date, recPeriod));
         } else {
             expense.setNextExecutionDate(null);
@@ -231,7 +231,7 @@ public class ExpenseService {
         }
 
         // Recalculate next execution date if recurrence properties changed
-        if (existingExpense.getIsRecurring() && existingExpense.getRecurrence() != RecurrencePeriod.NONE) {
+        if (existingExpense.getIsRecurring() && existingExpense.getRecurrence().isRecurring()) {
             existingExpense.setNextExecutionDate(calculateNextExecutionDate(existingExpense.getTransactionDate(), existingExpense.getRecurrence()));
         } else {
             existingExpense.setNextExecutionDate(null);

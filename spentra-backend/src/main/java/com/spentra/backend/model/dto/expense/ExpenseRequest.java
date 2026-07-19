@@ -11,6 +11,7 @@ import lombok.Setter;
 
 /**
  * Data Transfer Object (DTO) for creating or updating a transaction (expense/credit).
+ * Supports setting optional recurrence attributes for background-automated transaction spawning.
  */
 @Getter
 @Setter
@@ -50,4 +51,3 @@ public class ExpenseRequest {
      */
     private RecurrencePeriod recurrence;
 }
-
