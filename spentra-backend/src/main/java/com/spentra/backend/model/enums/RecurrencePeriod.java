@@ -1,7 +1,7 @@
 package com.spentra.backend.model.enums;
 
 /**
- * Represents the recurrence frequency of a recurring transaction.
+ * Represents the recurrence frequency of a recurring transaction (NONE, DAILY, WEEKLY, MONTHLY, YEARLY).
  */
 public enum RecurrencePeriod {
     /**
