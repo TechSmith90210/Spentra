@@ -30,7 +30,7 @@ import com.spentra.backend.repository.UserRepository;
 class ExpenseServiceTest {
 
     private ExpenseRepository expenseRepository;
-    private UserRepository userRepository;
+    private UserService userService;
     private CategoryRepository categoryRepository;
     private ExpenseService expenseService;
 
@@ -40,9 +40,9 @@ class ExpenseServiceTest {
     @BeforeEach
     void setUp() {
         expenseRepository = mock(ExpenseRepository.class);
-        userRepository = mock(UserRepository.class);
+        userService = mock(UserService.class);
         categoryRepository = mock(CategoryRepository.class);
-        expenseService = new ExpenseService(expenseRepository, userRepository, categoryRepository);
+        expenseService = new ExpenseService(expenseRepository, userService, categoryRepository);
 
         userId = UUID.randomUUID();
         testUser = new User();
@@ -55,7 +55,7 @@ class ExpenseServiceTest {
                 new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(userId.toString(), null, List.of())
         );
 
-        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+        when(userService.getCurrentUser()).thenReturn(testUser);
     }
 
     @AfterEach
