@@ -76,8 +76,8 @@ public class RecurringTransactionScheduler {
                     template.setNextExecutionDate(nextDate);
 
                     // If recurrence is invalid or NONE, disable future executions
-                    if (nextDate == null) {
-                        log.warn("Next execution date resolved to null for template ID: {}. Disabling recurrence.", template.getId());
+                    if (nextDate == null || !template.getRecurrence().isRecurring()) {
+                        log.warn("Next execution date resolved to null or recurrence is NONE for template ID: {}. Disabling recurrence.", template.getId());
                         template.setIsRecurring(false);
                     }
                 }

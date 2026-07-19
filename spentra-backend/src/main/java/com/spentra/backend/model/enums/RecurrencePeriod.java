@@ -27,5 +27,14 @@ public enum RecurrencePeriod {
     /**
      * Occurs every year.
      */
-    YEARLY
+    YEARLY;
+
+    /**
+     * Checks if this recurrence period represents a recurring state.
+     *
+     * @return true if this is not NONE, false otherwise.
+     */
+    public boolean isRecurring() {
+        return this != NONE;
+    }
 }

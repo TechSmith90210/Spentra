@@ -52,14 +52,22 @@ public class Expense {
     @Column(name = "transaction_date")
     private LocalDate transactionDate = LocalDate.now();
 
+    /**
+     * Boolean flag indicating whether this transaction is configured to recur regularly.
+     */
     @Column(name = "is_recurring")
     private Boolean isRecurring = false;
 
+    /**
+     * The recurrence period frequency (DAILY, WEEKLY, MONTHLY, YEARLY, or NONE) for the transaction.
+     */
     @Enumerated(EnumType.STRING)
     @Column(name = "recurrence")
     private RecurrencePeriod recurrence = RecurrencePeriod.NONE;
 
+    /**
+     * The next scheduled execution date when this recurring transaction should spawn a new instance.
+     */
     @Column(name = "next_execution_date")
     private LocalDate nextExecutionDate;
 }
-
