@@ -1,9 +1,9 @@
 /**
- * @file Spentra Landing Page — Minimalist editorial landing page for non-authenticated users.
+ * @file Spentra Landing Page — Beautiful, clean, and user-friendly landing page for visitors.
  *
- * Features a clean, high-contrast hero section with glowing ASCII art,
- * an interactive Terminal Ledger Sandbox with real-time ASCII bar charting,
- * a Bento Grid of core engineering pillars, and smooth Shadcn-like transitions.
+ * Features a high-contrast hero section with glowing ASCII art,
+ * an interactive Terminal Sandbox to try Spentra live with real-time visual charting,
+ * a clean bento grid of core benefits, and smooth transitions.
  */
 
 'use client';
@@ -83,8 +83,8 @@ export default function LandingPage() {
   const [inputType, setInputType] = useState<'CREDIT' | 'EXPENSE'>('EXPENSE');
   const [inputCategory, setInputCategory] = useState<MockTransaction['category']>('food');
   const [consoleLogs, setConsoleLogs] = useState<string[]>([
-    'SYSTEM: Spentra Core Ledger v1.0.0 initialized.',
-    'LEDGER: Loaded 3 bootstrap entries successfully.',
+    'SYSTEM: Spentra Sandbox initialized.',
+    'LEDGER: Loaded 3 demo transactions successfully.',
     'SANDBOX: Interactive terminal is online.'
   ]);
 
@@ -103,14 +103,14 @@ export default function LandingPage() {
       date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     };
     setSandboxTxs(prev => [...prev, newTx]);
-    logMessage(`LEDGER_ADD: Injected ${newTx.type} "${newTx.title}" of ${formatCurrency(newTx.amount, currency)}.`);
+    logMessage(`LOG: Added ${newTx.type} "${newTx.title}" of ${formatCurrency(newTx.amount, currency)}.`);
   };
 
   const handleInjectCustom = (e: React.FormEvent) => {
     e.preventDefault();
     const amt = parseFloat(inputAmount);
     if (!inputTitle || isNaN(amt) || amt <= 0) {
-      logMessage('ERROR: Invalid title or amount specified.');
+      logMessage('ERROR: Invalid name or amount specified.');
       return;
     }
     const newTx: MockTransaction = {
@@ -122,7 +122,7 @@ export default function LandingPage() {
       date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     };
     setSandboxTxs(prev => [...prev, newTx]);
-    logMessage(`LEDGER_ADD: Custom injected ${newTx.type} "${newTx.title}" of ${formatCurrency(newTx.amount, currency)}.`);
+    logMessage(`LOG: Added ${newTx.type} "${newTx.title}" of ${formatCurrency(newTx.amount, currency)}.`);
     setInputTitle('');
     setInputAmount('');
   };
@@ -134,8 +134,8 @@ export default function LandingPage() {
       { id: '3', title: 'Specialty Espresso', amount: 15, type: 'EXPENSE', category: 'coffee', date: 'Jul 17' },
     ]);
     setConsoleLogs([
-      'SYSTEM: Ledger memory flushed.',
-      'LEDGER: Restored 3 basic bootstrap entries.'
+      'SYSTEM: Sandbox memory reset.',
+      'LEDGER: Restored 3 basic demo entries.'
     ]);
   };
 
@@ -167,7 +167,7 @@ export default function LandingPage() {
   }, [sandboxTxs]);
 
   const asciiChart = useMemo(() => {
-    if (runningBalances.length === 0) return 'No ledger entries to plot.';
+    if (runningBalances.length === 0) return 'No entries to plot.';
     // Take up to last 6 entries to keep chart tidy
     const data = runningBalances.slice(-6);
     const minVal = Math.min(...data, 0);
@@ -224,7 +224,7 @@ export default function LandingPage() {
           </svg>
           <div className="text-center space-y-1">
             <p className="text-sm font-bold tracking-widest uppercase text-on-surface">Initializing Spentra</p>
-            <p className="text-xs text-on-surface-variant font-mono">loading secure ledger environment...</p>
+            <p className="text-xs text-on-surface-variant font-mono">loading your secure environment...</p>
           </div>
         </div>
       </div>
@@ -271,26 +271,24 @@ export default function LandingPage() {
         <div className="lg:col-span-7 space-y-6 animate-slide-up">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-surface-container-high text-on-surface-variant rounded-full text-xs font-bold uppercase tracking-wider">
             <Sparkles className="w-3.5 h-3.5 text-tertiary" />
-            <span>Mathematical Expense Engineering</span>
+            <span>Effortless Expense Tracking</span>
           </div>
 
           <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight leading-[1.05] text-on-surface">
-            Double-Entry <br />
+            Financial Clarity, <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-tertiary to-tertiary-container">
-              Financial Precision.
+              Simplified.
             </span>
           </h1>
 
           <p className="text-lg text-on-surface-variant max-w-xl leading-relaxed">
-            Spentra is a high-contrast, lightning-fast expense management shell.
-            Armed with strict double-entry balance sheets, automated scheduler crons,
-            and gorgeous minimalistic dashboard statistics to give you absolute financial control.
+            Spentra is a clean, lightning-fast expense tracker. Focus on your daily money habits with beautiful real-time insights, automated budget alerts, and clean visual statistics to give you absolute control over your money.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 pt-4">
             <Link href="/signup">
               <Button variant="primary" size="lg" className="shadow-md">
-                Build Your Ledger <ArrowRight className="w-4 h-4 ml-1" />
+                Start Tracking Free <ArrowRight className="w-4 h-4 ml-1" />
               </Button>
             </Link>
             <a href="#sandbox">
@@ -309,7 +307,7 @@ export default function LandingPage() {
               {ASCII_LOGO}
             </pre>
             <div className="mt-6 flex justify-between items-center text-xs font-mono text-on-surface-variant/80 border-t border-outline-variant/15 pt-4">
-              <span>LEDGER_SHAPE: 0x5E5E</span>
+              <span>STATUS: SYNCED</span>
               <span className="flex items-center gap-1">
                 <span className="w-2 h-2 rounded-full bg-income animate-pulse" />
                 ONLINE
@@ -324,10 +322,10 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center max-w-2xl mx-auto mb-16 space-y-4">
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-on-surface">
-              Interactive Ledger Core
+              Interactive Sandbox
             </h2>
             <p className="text-on-surface-variant leading-relaxed">
-              Experience the engine. Inject mock credits and expenses below and watch the double-entry sandbox instantly compile balances and output a live-updating ASCII chart.
+              Try Spentra live. Add mock income and expenses below to see how our interactive sandbox automatically updates your balance and plots a clean visual chart.
             </p>
           </div>
 
@@ -336,13 +334,13 @@ export default function LandingPage() {
             <div className="lg:col-span-4 flex flex-col justify-between bg-surface-container-low p-8 rounded-3xl border border-outline-variant/10">
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-lg font-bold text-on-surface mb-1">Sandbox Injector</h3>
-                  <p className="text-xs text-on-surface-variant">Feed mock data to trigger the ledger computations.</p>
+                  <h3 className="text-lg font-bold text-on-surface mb-1">Quick Sandbox Simulator</h3>
+                  <p className="text-xs text-on-surface-variant">Click on any action or add a custom entry to test the dashboard.</p>
                 </div>
 
                 {/* Preset Trigger buttons */}
                 <div className="space-y-2.5">
-                  <p className="text-xs uppercase font-bold tracking-wider text-on-surface-variant">Presets</p>
+                  <p className="text-xs uppercase font-bold tracking-wider text-on-surface-variant">Preset Actions</p>
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       onClick={() => handleInjectPreset({ title: 'Bonus Injected', amount: 150, type: 'CREDIT', category: 'salary' })}
@@ -352,19 +350,19 @@ export default function LandingPage() {
                       <span>+ $150 Bonus</span>
                     </button>
                     <button
-                      onClick={() => handleInjectPreset({ title: 'Uber Taxi', amount: 25, type: 'EXPENSE', category: 'transport' })}
+                      onClick={() => handleInjectPreset({ title: 'Uber Ride', amount: 25, type: 'EXPENSE', category: 'transport' })}
                       className="flex items-center gap-2 p-3 rounded-xl bg-surface hover:bg-surface-container-high border border-outline-variant/5 text-xs font-semibold text-error cursor-pointer active:scale-95 transition-all text-left"
                     >
                       <span>- $25 Uber</span>
                     </button>
                     <button
-                      onClick={() => handleInjectPreset({ title: 'Double Cheeseburger', amount: 35, type: 'EXPENSE', category: 'food' })}
+                      onClick={() => handleInjectPreset({ title: 'Burger Dinner', amount: 35, type: 'EXPENSE', category: 'food' })}
                       className="flex items-center gap-2 p-3 rounded-xl bg-surface hover:bg-surface-container-high border border-outline-variant/5 text-xs font-semibold text-error cursor-pointer active:scale-95 transition-all text-left"
                     >
                       <span>- $35 Dinner</span>
                     </button>
                     <button
-                      onClick={() => handleInjectPreset({ title: 'Espresso Double Shot', amount: 8, type: 'EXPENSE', category: 'coffee' })}
+                      onClick={() => handleInjectPreset({ title: 'Double Espresso', amount: 8, type: 'EXPENSE', category: 'coffee' })}
                       className="flex items-center gap-2 p-3 rounded-xl bg-surface hover:bg-surface-container-high border border-outline-variant/5 text-xs font-semibold text-error cursor-pointer active:scale-95 transition-all text-left"
                     >
                       <span>- $8 Coffee</span>
@@ -408,7 +406,7 @@ export default function LandingPage() {
                     type="submit"
                     className="w-full p-2.5 bg-tertiary hover:bg-tertiary-container text-on-tertiary text-xs font-bold rounded-xl active:scale-95 transition-all cursor-pointer shadow-sm text-center"
                   >
-                    Inject Into Ledger
+                    Add to Sandbox
                   </button>
                 </form>
               </div>
@@ -417,7 +415,7 @@ export default function LandingPage() {
                 onClick={handleResetLedger}
                 className="mt-6 w-full p-2 bg-surface-container-highest hover:bg-outline-variant/20 text-on-surface-variant text-[11px] font-bold uppercase tracking-wider rounded-xl transition-colors cursor-pointer text-center"
               >
-                Reset Ledger Cache
+                Reset Sandbox
               </button>
             </div>
 
@@ -435,7 +433,7 @@ export default function LandingPage() {
                   </span>
                 </div>
                 <div className="text-[10px] font-mono text-on-surface-variant/75">
-                  LEDGER STATS
+                  SANDBOX BALANCE
                 </div>
               </div>
 
@@ -466,7 +464,7 @@ export default function LandingPage() {
                 {/* ASCII Chart */}
                 <div className="md:col-span-7 font-mono flex flex-col">
                   <div className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-2">
-                    Running Balance Chart (ASCII)
+                    Your Spending Trend (ASCII)
                   </div>
                   <div className="bg-surface-dim/40 dark:bg-black/40 p-4 rounded-2xl border border-outline-variant/10 text-[10px] sm:text-xs overflow-x-auto text-tertiary select-none leading-relaxed">
                     <pre className="whitespace-pre font-mono">{asciiChart}</pre>
@@ -476,7 +474,7 @@ export default function LandingPage() {
                 {/* Ledger Listing */}
                 <div className="md:col-span-5 flex flex-col font-mono">
                   <div className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-2">
-                    Running Ledger Log
+                    Sandbox History
                   </div>
                   <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
                     {sandboxTxs.map((tx, idx) => (
@@ -518,14 +516,14 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* CORE ENGINEERING PILLARS (BENTO GRID) */}
+      {/* CORE BENEFITS GRID */}
       <section className="py-24 px-6 max-w-7xl mx-auto w-full relative z-10">
         <div className="text-center max-w-2xl mx-auto mb-20 space-y-4">
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-on-surface">
-            Deterministic Precision Core
+            Built for Seamless Simplicity
           </h2>
           <p className="text-on-surface-variant leading-relaxed">
-            Spentra is not just another basic budget tracker. We built it upon rock-solid mathematical principles and zero-bloat modular codebases.
+            Spentra is built to be fast, beautiful, and completely secure. No clutter, just the features you need to master your personal finance.
           </p>
         </div>
 
@@ -537,14 +535,14 @@ export default function LandingPage() {
                 <Shield className="w-6 h-6" />
               </span>
               <h3 className="text-xl font-bold text-on-surface">
-                Mathematical Double-Entry
+                Smart Categorization
               </h3>
               <p className="text-sm text-on-surface-variant leading-relaxed">
-                Transactions compile into immutable balance ledgers. Underneath, a clean balance formula ensures every credited asset balances perfectly against liability categories.
+                Your transactions are automatically categorized and styled. See exactly where your money goes with elegant progress bars, breakdown stats, and clear summaries.
               </p>
             </div>
             <div className="mt-6 pt-4 border-t border-outline-variant/10 text-xs font-mono text-on-surface-variant">
-              LEDGER_EQUATION: A = L + E
+              DESIGN: MINIMAL & CLEAN
             </div>
           </div>
 
@@ -555,14 +553,14 @@ export default function LandingPage() {
                 <Calendar className="w-6 h-6" />
               </span>
               <h3 className="text-xl font-bold text-on-surface">
-                Cron Background Scheduler
+                Automated Alerts
               </h3>
               <p className="text-sm text-on-surface-variant leading-relaxed">
-                An active backend daemon automatically tracks daily and monthly schedules, updating recurring bills and checking category budget bounds so you get notified instantly.
+                Our automated background assistant keeps track of your recurring bills and warns you if your budgets are running hot, so you are always ahead of your expenses.
               </p>
             </div>
             <div className="mt-6 pt-4 border-t border-outline-variant/10 text-xs font-mono text-on-surface-variant">
-              CRON_DAEMON: 0 0 * * *
+              SCHEDULE: DAILY UPDATE
             </div>
           </div>
 
@@ -573,14 +571,14 @@ export default function LandingPage() {
                 <Lock className="w-6 h-6" />
               </span>
               <h3 className="text-xl font-bold text-on-surface">
-                Stateless Token Security
+                Bank-Grade Privacy
               </h3>
               <p className="text-sm text-on-surface-variant leading-relaxed">
-                Spentra works via secure, encrypted stateless JWT tokens that contain signed user payloads, keeping session tracking fully sandboxed and free of cookie exploits.
+                Your data belongs to you. Spentra uses state-of-the-art token encryption and sandboxed session storage to guarantee your personal financial privacy.
               </p>
             </div>
             <div className="mt-6 pt-4 border-t border-outline-variant/10 text-xs font-mono text-on-surface-variant">
-              CRYPT_SEC: HS256 / JWT
+              SECURITY: SECURE & PRIVATE
             </div>
           </div>
         </div>
@@ -594,10 +592,10 @@ export default function LandingPage() {
 
           <div className="max-w-xl mx-auto space-y-6 relative z-10">
             <h2 className="text-4xl font-extrabold tracking-tight text-on-surface">
-              Begin your financial sovereignty today.
+              Take control of your financial future.
             </h2>
             <p className="text-on-surface-variant text-base leading-relaxed">
-              Create your secure sandbox workspace or fully register an active ledger. Start building wealth with absolute engineering clarity.
+              Sign up today to start tracking your daily habits, managing smart budgets, and building long-term wealth with ease.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
               <Link href="/signup">
@@ -626,7 +624,7 @@ export default function LandingPage() {
             </svg>
             <span>Spentra</span>
           </div>
-          <p>© {new Date().getFullYear()} Spentra Ledger Systems. All mathematical rights reserved.</p>
+          <p>© {new Date().getFullYear()} Spentra Expense Tracker. All rights reserved.</p>
           <div className="flex items-center gap-6">
             <Link href="/login" className="hover:text-on-surface hover:underline underline-offset-4 transition-colors">
               Ledger

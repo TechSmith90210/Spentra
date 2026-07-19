@@ -1,0 +1,10 @@
+
+> spentra-frontend@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.9 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.2:3000
+✓ Ready in 791ms
+
+ GET / 200 in 652ms (next.js: 329ms, application-code: 323ms)
