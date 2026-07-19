@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -52,6 +53,11 @@ public class UserServiceTest {
         testUser.setEmail("test@example.com");
         testUser.setName("Initial Name");
         testUser.setProfilePic("initial-pic-url");
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
     }
 
     private void mockAuthentication() {
@@ -113,5 +119,16 @@ public class UserServiceTest {
 
         verify(userRepository).findById(userId);
         verify(userRepository).save(any(User.class));
+    }
+
+    @Test
+    void testGetCurrentUser_NullAuthenticationThrowsUnauthorized() {
+        // Arrange
+        SecurityContextHolder.clearContext();
+
+        // Act & Assert
+        ApiRequestException exception = assertThrows(ApiRequestException.class, () -> userService.getCurrentUser());
+        assertEquals(org.springframework.http.HttpStatus.UNAUTHORIZED, exception.getStatus());
+        assertEquals("Unauthenticated request", exception.getMessage());
     }
 }
