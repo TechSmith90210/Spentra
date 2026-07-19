@@ -10,6 +10,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { login as apiLogin, signup as apiSignup } from '@/lib/api/auth';
+import { getProfile } from '@/lib/api/users';
 import type { AuthRequest, SignUpRequest } from '@/lib/api/types';
 import { SPENTRA_TOKEN_KEY, SPENTRA_USER_KEY } from '@/lib/constants/auth';
 
@@ -40,25 +41,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   /* Hydrate auth state from localStorage on mount */
   useEffect(() => {
-    try {
-      const storedToken = localStorage.getItem(SPENTRA_TOKEN_KEY);
-      const storedUser = localStorage.getItem(SPENTRA_USER_KEY);
+    async function hydrate() {
+      try {
+        const storedToken = localStorage.getItem(SPENTRA_TOKEN_KEY);
 
-      if (storedToken && storedUser) {
-        setToken(storedToken);
-        setUser(JSON.parse(storedUser));
+        if (storedToken) {
+          setToken(storedToken);
+          const profile = await getProfile();
+          setUser({
+            email: profile.email,
+            name: profile.name,
+            profilePic: profile.profilePic,
+          });
+        }
+      } catch {
+        // If profile fetch fails or token is invalid, clear token/user state and legacy cached data
+        localStorage.removeItem(SPENTRA_TOKEN_KEY);
+        localStorage.removeItem(SPENTRA_USER_KEY);
+        setToken(null);
+        setUser(null);
+      } finally {
+        setIsLoading(false);
       }
-    } catch {
-      localStorage.removeItem(SPENTRA_TOKEN_KEY);
-      localStorage.removeItem(SPENTRA_USER_KEY);
-    } finally {
-      setIsLoading(false);
     }
+    hydrate();
   }, []);
 
   const persistAuth = useCallback((authToken: string, authUser: User) => {
     localStorage.setItem(SPENTRA_TOKEN_KEY, authToken);
-    localStorage.setItem(SPENTRA_USER_KEY, JSON.stringify(authUser));
+    // User PII is NOT stored in localStorage to prevent data leakage and exposure
     setToken(authToken);
     setUser(authUser);
   }, []);
@@ -84,15 +95,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const updateUser = useCallback((name: string, profilePic?: string) => {
     setUser((prev) => {
       if (!prev) return null;
-      const updated = { ...prev, name, profilePic };
-      localStorage.setItem(SPENTRA_USER_KEY, JSON.stringify(updated));
-      return updated;
+      return { ...prev, name, profilePic };
     });
   }, []);
 
   const logout = useCallback(() => {
     localStorage.removeItem(SPENTRA_TOKEN_KEY);
-    localStorage.removeItem(SPENTRA_USER_KEY);
+    localStorage.removeItem(SPENTRA_USER_KEY); // Clean up legacy user data if any
     setToken(null);
     setUser(null);
   }, []);
