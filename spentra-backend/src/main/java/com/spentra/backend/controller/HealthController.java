@@ -7,6 +7,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.HashMap;
@@ -16,7 +18,7 @@ import java.util.Map;
 @RequestMapping("/api/health")
 public class HealthController {
 
-    private static final Logger log = LoggerFactory.getLogger(HealthController.class);
+    private static final Logger logger = LoggerFactory.getLogger(HealthController.class);
     private final JdbcTemplate jdbcTemplate;
 
     public HealthController(JdbcTemplate jdbcTemplate) {
@@ -41,12 +43,7 @@ public class HealthController {
                 return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(response);
             }
         } catch (Exception e) {
-            // SECURITY CONCERN: Avoid exposing internal exception messages/stack traces
-            // in public API responses, as they can leak sensitive infrastructure details,
-            // driver/dialect information, or schema design.
-            // Log the detailed exception securely on the server side instead.
-            log.error("Database health check failed", e);
-
+            logger.error("Database connection failed during health check: ", e);
             response.put("database", "DOWN");
             response.put("error", "Database connection failed");
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(response);
