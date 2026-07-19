@@ -3,7 +3,9 @@ package com.spentra.backend.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -20,7 +22,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.http.HttpStatus;
 
+import com.spentra.backend.exception.ApiRequestException;
+import com.spentra.backend.model.dto.budget.BudgetRequest;
+import com.spentra.backend.model.dto.budget.BudgetResponse;
 import com.spentra.backend.model.dto.budget.BudgetSummaryResponse;
 import com.spentra.backend.model.entity.Budget;
 import com.spentra.backend.model.entity.Category;
@@ -67,6 +73,319 @@ class BudgetServiceTest {
     @AfterEach
     void tearDown() {
         SecurityContextHolder.clearContext();
+    }
+
+    @Test
+    void testCreateOrUpdateBudget_NullRequest() {
+        ApiRequestException exception = assertThrows(ApiRequestException.class, () -> {
+            budgetService.createOrUpdateBudget(null);
+        });
+        assertEquals("A valid positive limit amount is required", exception.getMessage());
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
+    }
+
+    @Test
+    void testCreateOrUpdateBudget_NullAmountLimit() {
+        BudgetRequest req = new BudgetRequest();
+        req.setAmountLimit(null);
+        req.setBudgetMonth("2026-07");
+
+        ApiRequestException exception = assertThrows(ApiRequestException.class, () -> {
+            budgetService.createOrUpdateBudget(req);
+        });
+        assertEquals("A valid positive limit amount is required", exception.getMessage());
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
+    }
+
+    @Test
+    void testCreateOrUpdateBudget_NegativeAmountLimit() {
+        BudgetRequest req = new BudgetRequest();
+        req.setAmountLimit(-50.0);
+        req.setBudgetMonth("2026-07");
+
+        ApiRequestException exception = assertThrows(ApiRequestException.class, () -> {
+            budgetService.createOrUpdateBudget(req);
+        });
+        assertEquals("A valid positive limit amount is required", exception.getMessage());
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
+    }
+
+    @Test
+    void testCreateOrUpdateBudget_NullAuthentication() {
+        // Clear security context
+        SecurityContextHolder.clearContext();
+
+        BudgetRequest req = new BudgetRequest();
+        req.setAmountLimit(100.0);
+        req.setBudgetMonth("2026-07");
+
+        ApiRequestException exception = assertThrows(ApiRequestException.class, () -> {
+            budgetService.createOrUpdateBudget(req);
+        });
+        assertEquals("Unauthenticated request", exception.getMessage());
+        assertEquals(HttpStatus.UNAUTHORIZED, exception.getStatus());
+    }
+
+    @Test
+    void testCreateOrUpdateBudget_NullPrincipal() {
+        // Set security context with null principal
+        SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(null, null, List.of())
+        );
+
+        BudgetRequest req = new BudgetRequest();
+        req.setAmountLimit(100.0);
+        req.setBudgetMonth("2026-07");
+
+        ApiRequestException exception = assertThrows(ApiRequestException.class, () -> {
+            budgetService.createOrUpdateBudget(req);
+        });
+        assertEquals("Unauthenticated request", exception.getMessage());
+        assertEquals(HttpStatus.UNAUTHORIZED, exception.getStatus());
+    }
+
+    @Test
+    void testCreateOrUpdateBudget_UserNotFound() {
+        UUID nonExistentUserId = UUID.randomUUID();
+        SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(nonExistentUserId.toString(), null, List.of())
+        );
+
+        when(userRepository.findById(nonExistentUserId)).thenReturn(Optional.empty());
+
+        BudgetRequest req = new BudgetRequest();
+        req.setAmountLimit(100.0);
+        req.setBudgetMonth("2026-07");
+
+        ApiRequestException exception = assertThrows(ApiRequestException.class, () -> {
+            budgetService.createOrUpdateBudget(req);
+        });
+        assertEquals("User not found", exception.getMessage());
+        assertEquals(HttpStatus.UNAUTHORIZED, exception.getStatus());
+    }
+
+    @Test
+    void testCreateOrUpdateBudget_CategoryNotFound() {
+        UUID nonExistentCategoryId = UUID.randomUUID();
+        when(categoryRepository.findById(nonExistentCategoryId)).thenReturn(Optional.empty());
+
+        BudgetRequest req = new BudgetRequest();
+        req.setAmountLimit(100.0);
+        req.setCategoryId(nonExistentCategoryId);
+        req.setBudgetMonth("2026-07");
+
+        ApiRequestException exception = assertThrows(ApiRequestException.class, () -> {
+            budgetService.createOrUpdateBudget(req);
+        });
+        assertEquals("Category not found", exception.getMessage());
+        assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
+    }
+
+    @Test
+    void testCreateOrUpdateBudget_CategoryAccessDenied() {
+        UUID otherUserId = UUID.randomUUID();
+        User otherUser = new User();
+        otherUser.setId(otherUserId);
+
+        UUID categoryId = UUID.randomUUID();
+        Category category = new Category();
+        category.setId(categoryId);
+        category.setUser(otherUser); // Owned by someone else
+
+        when(categoryRepository.findById(categoryId)).thenReturn(Optional.of(category));
+
+        BudgetRequest req = new BudgetRequest();
+        req.setAmountLimit(100.0);
+        req.setCategoryId(categoryId);
+        req.setBudgetMonth("2026-07");
+
+        ApiRequestException exception = assertThrows(ApiRequestException.class, () -> {
+            budgetService.createOrUpdateBudget(req);
+        });
+        assertEquals("Access denied to the specified category", exception.getMessage());
+        assertEquals(HttpStatus.FORBIDDEN, exception.getStatus());
+    }
+
+    @Test
+    void testCreateOrUpdateBudget_CreateGlobalBudget() {
+        YearMonth targetMonth = YearMonth.of(2026, 7);
+
+        BudgetRequest req = new BudgetRequest();
+        req.setAmountLimit(350.0);
+        req.setBudgetMonth("2026-07");
+        req.setCategoryId(null);
+
+        // Mock repo lookup to return empty
+        when(budgetRepository.findByUserIdAndCategoryAndBudgetMonth(userId, null, targetMonth))
+                .thenReturn(Optional.empty());
+
+        // Mock repo save
+        when(budgetRepository.save(any(Budget.class))).thenAnswer(invocation -> {
+            Budget b = invocation.getArgument(0);
+            if (b.getId() == null) {
+                b.setId(UUID.randomUUID());
+            }
+            return b;
+        });
+
+        BudgetResponse response = budgetService.createOrUpdateBudget(req);
+
+        assertEquals(350.0, response.getAmountLimit());
+        assertEquals("Global", response.getCategoryName());
+        assertEquals(null, response.getCategoryId());
+        assertEquals("2026-07", response.getBudgetMonth());
+    }
+
+    @Test
+    void testCreateOrUpdateBudget_UpdateGlobalBudget() {
+        YearMonth targetMonth = YearMonth.of(2026, 7);
+
+        Budget existingBudget = new Budget();
+        existingBudget.setId(UUID.randomUUID());
+        existingBudget.setUser(testUser);
+        existingBudget.setCategory(null);
+        existingBudget.setAmountLimit(300.0);
+        existingBudget.setBudgetMonth(targetMonth);
+
+        BudgetRequest req = new BudgetRequest();
+        req.setAmountLimit(450.0);
+        req.setBudgetMonth("2026-07");
+        req.setCategoryId(null);
+
+        // Mock repo lookup to return the existing budget
+        when(budgetRepository.findByUserIdAndCategoryAndBudgetMonth(userId, null, targetMonth))
+                .thenReturn(Optional.of(existingBudget));
+
+        // Mock repo save
+        when(budgetRepository.save(any(Budget.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        BudgetResponse response = budgetService.createOrUpdateBudget(req);
+
+        assertEquals(existingBudget.getId(), response.getId());
+        assertEquals(450.0, response.getAmountLimit());
+        assertEquals("Global", response.getCategoryName());
+        assertEquals(null, response.getCategoryId());
+        assertEquals("2026-07", response.getBudgetMonth());
+    }
+
+    @Test
+    void testCreateOrUpdateBudget_CreateCategoryBudget() {
+        UUID categoryId = UUID.randomUUID();
+        Category category = new Category();
+        category.setId(categoryId);
+        category.setName("Shopping");
+        category.setUser(testUser);
+
+        when(categoryRepository.findById(categoryId)).thenReturn(Optional.of(category));
+
+        YearMonth targetMonth = YearMonth.of(2026, 7);
+
+        BudgetRequest req = new BudgetRequest();
+        req.setAmountLimit(150.0);
+        req.setBudgetMonth("2026-07");
+        req.setCategoryId(categoryId);
+
+        // Mock repo lookup
+        when(budgetRepository.findByUserIdAndCategoryAndBudgetMonth(userId, category, targetMonth))
+                .thenReturn(Optional.empty());
+
+        // Mock repo save
+        when(budgetRepository.save(any(Budget.class))).thenAnswer(invocation -> {
+            Budget b = invocation.getArgument(0);
+            if (b.getId() == null) {
+                b.setId(UUID.randomUUID());
+            }
+            return b;
+        });
+
+        BudgetResponse response = budgetService.createOrUpdateBudget(req);
+
+        assertEquals(150.0, response.getAmountLimit());
+        assertEquals("Shopping", response.getCategoryName());
+        assertEquals(categoryId, response.getCategoryId());
+        assertEquals("2026-07", response.getBudgetMonth());
+    }
+
+    @Test
+    void testCreateOrUpdateBudget_UpdateCategoryBudget() {
+        UUID categoryId = UUID.randomUUID();
+        Category category = new Category();
+        category.setId(categoryId);
+        category.setName("Shopping");
+        category.setUser(testUser);
+
+        when(categoryRepository.findById(categoryId)).thenReturn(Optional.of(category));
+
+        YearMonth targetMonth = YearMonth.of(2026, 7);
+
+        Budget existingBudget = new Budget();
+        existingBudget.setId(UUID.randomUUID());
+        existingBudget.setUser(testUser);
+        existingBudget.setCategory(category);
+        existingBudget.setAmountLimit(120.0);
+        existingBudget.setBudgetMonth(targetMonth);
+
+        BudgetRequest req = new BudgetRequest();
+        req.setAmountLimit(200.0);
+        req.setBudgetMonth("2026-07");
+        req.setCategoryId(categoryId);
+
+        // Mock repo lookup
+        when(budgetRepository.findByUserIdAndCategoryAndBudgetMonth(userId, category, targetMonth))
+                .thenReturn(Optional.of(existingBudget));
+
+        // Mock repo save
+        when(budgetRepository.save(any(Budget.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        BudgetResponse response = budgetService.createOrUpdateBudget(req);
+
+        assertEquals(existingBudget.getId(), response.getId());
+        assertEquals(200.0, response.getAmountLimit());
+        assertEquals("Shopping", response.getCategoryName());
+        assertEquals(categoryId, response.getCategoryId());
+        assertEquals("2026-07", response.getBudgetMonth());
+    }
+
+    @Test
+    void testCreateOrUpdateBudget_DefaultToCurrentMonth() {
+        BudgetRequest req = new BudgetRequest();
+        req.setAmountLimit(250.0);
+        req.setBudgetMonth(null); // Should default to YearMonth.now()
+        req.setCategoryId(null);
+
+        YearMonth currentMonth = YearMonth.now();
+
+        when(budgetRepository.findByUserIdAndCategoryAndBudgetMonth(userId, null, currentMonth))
+                .thenReturn(Optional.empty());
+
+        when(budgetRepository.save(any(Budget.class))).thenAnswer(invocation -> {
+            Budget b = invocation.getArgument(0);
+            if (b.getId() == null) {
+                b.setId(UUID.randomUUID());
+            }
+            return b;
+        });
+
+        BudgetResponse response = budgetService.createOrUpdateBudget(req);
+
+        assertEquals(250.0, response.getAmountLimit());
+        assertEquals("Global", response.getCategoryName());
+        assertEquals(currentMonth.toString(), response.getBudgetMonth());
+    }
+
+    @Test
+    void testCreateOrUpdateBudget_InvalidMonthFormat() {
+        BudgetRequest req = new BudgetRequest();
+        req.setAmountLimit(100.0);
+        req.setBudgetMonth("invalid-month");
+        req.setCategoryId(null);
+
+        ApiRequestException exception = assertThrows(ApiRequestException.class, () -> {
+            budgetService.createOrUpdateBudget(req);
+        });
+
+        assertEquals("Invalid month format. Please use YYYY-MM", exception.getMessage());
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
     }
 
     @Test
