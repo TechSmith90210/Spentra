@@ -45,10 +45,16 @@ public class Expense {
     @JoinColumn(name = "category_id")
     private Category category;
 
+    /**
+     * Type of the transaction: EXPENSE (outgoing payment) or CREDIT (incoming money).
+     */
     @Enumerated(EnumType.STRING)
     @Column(name = "type")
     private TransactionType type = TransactionType.EXPENSE;
 
+    /**
+     * The date when the transaction took place.
+     */
     @Column(name = "transaction_date")
     private LocalDate transactionDate = LocalDate.now();
 
@@ -62,4 +68,3 @@ public class Expense {
     @Column(name = "next_execution_date")
     private LocalDate nextExecutionDate;
 }
-
