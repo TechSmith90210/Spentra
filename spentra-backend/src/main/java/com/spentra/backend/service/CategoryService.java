@@ -5,7 +5,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.spentra.backend.exception.ApiRequestException;
@@ -14,7 +13,6 @@ import com.spentra.backend.model.dto.category.CategoryResponse;
 import com.spentra.backend.model.entity.Category;
 import com.spentra.backend.model.entity.User;
 import com.spentra.backend.repository.CategoryRepository;
-import com.spentra.backend.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -26,25 +24,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CategoryService {
     private final CategoryRepository repo;
-    private final UserRepository userRepository;
-
-    /**
-     * Helper method to retrieve the currently authenticated user from SecurityContext.
-     *
-     * @return User the authenticated user entity
-     * @throws ApiRequestException if the user is not found or unauthenticated
-     */
-    private User getCurrentUser() {
-        if (SecurityContextHolder.getContext().getAuthentication() == null) {
-            throw new ApiRequestException("Unauthenticated request", HttpStatus.UNAUTHORIZED);
-        }
-        String userIdStr = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if (userIdStr == null) {
-            throw new ApiRequestException("Unauthenticated request", HttpStatus.UNAUTHORIZED);
-        }
-        return userRepository.findById(UUID.fromString(userIdStr))
-                .orElseThrow(() -> new ApiRequestException("User not found", HttpStatus.UNAUTHORIZED));
-    }
+    private final UserService userService;
 
     /**
      * Creates a new category and binds it to the currently authenticated user.
@@ -57,7 +37,7 @@ public class CategoryService {
             throw new ApiRequestException("Category name must not be empty", HttpStatus.BAD_REQUEST);
         }
 
-        User currentUser = getCurrentUser();
+        User currentUser = userService.getCurrentUser();
         Category category = new Category();
         category.setName(req.getName());
         category.setUser(currentUser);
@@ -76,7 +56,7 @@ public class CategoryService {
      * @return List of CategoryResponse objects
      */
     public List<CategoryResponse> getCategories() {
-        User currentUser = getCurrentUser();
+        User currentUser = userService.getCurrentUser();
         List<Category> fetchedCategories = repo.findByUserIdOrUserIsNull(currentUser.getId());
 
         return fetchedCategories.stream()
@@ -96,7 +76,7 @@ public class CategoryService {
         Category fetchedCategory = repo.findById(id)
                 .orElseThrow(() -> new ApiRequestException("Category not found with the specified ID", HttpStatus.NOT_FOUND));
 
-        User currentUser = getCurrentUser();
+        User currentUser = userService.getCurrentUser();
 
         // Enforce user isolation
         if (fetchedCategory.getUser() == null) {
@@ -126,7 +106,7 @@ public class CategoryService {
         Category fetchedCategory = repo.findById(id)
                 .orElseThrow(() -> new ApiRequestException("Category not found with the specified ID", HttpStatus.NOT_FOUND));
 
-        User currentUser = getCurrentUser();
+        User currentUser = userService.getCurrentUser();
 
         // Enforce user isolation
         if (fetchedCategory.getUser() == null) {
@@ -139,4 +119,3 @@ public class CategoryService {
         repo.delete(fetchedCategory);
     }
 }
-

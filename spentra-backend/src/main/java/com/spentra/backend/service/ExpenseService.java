@@ -6,7 +6,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.spentra.backend.exception.ApiRequestException;
@@ -20,7 +19,6 @@ import com.spentra.backend.model.enums.RecurrencePeriod;
 import com.spentra.backend.model.enums.TransactionType;
 import com.spentra.backend.repository.CategoryRepository;
 import com.spentra.backend.repository.ExpenseRepository;
-import com.spentra.backend.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -33,26 +31,8 @@ import lombok.RequiredArgsConstructor;
 public class ExpenseService {
 
     private final ExpenseRepository repo;
-    private final UserRepository userRepository;
+    private final UserService userService;
     private final CategoryRepository categoryRepository;
-
-    /**
-     * Helper method to retrieve the currently authenticated user from SecurityContext.
-     *
-     * @return User the authenticated user entity
-     * @throws ApiRequestException if the user is unauthenticated or not found
-     */
-    private User getCurrentUser() {
-        if (SecurityContextHolder.getContext().getAuthentication() == null) {
-            throw new ApiRequestException("Unauthenticated request", HttpStatus.UNAUTHORIZED);
-        }
-        String userIdStr = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if (userIdStr == null) {
-            throw new ApiRequestException("Unauthenticated request", HttpStatus.UNAUTHORIZED);
-        }
-        return userRepository.findById(UUID.fromString(userIdStr))
-                .orElseThrow(() -> new ApiRequestException("User not found", HttpStatus.UNAUTHORIZED));
-    }
 
     /**
      * Resolves the Category entity and validates that it is accessible to the user
@@ -140,7 +120,7 @@ public class ExpenseService {
             throw new ApiRequestException("Title and amount are required", HttpStatus.BAD_REQUEST);
         }
 
-        User currentUser = getCurrentUser();
+        User currentUser = userService.getCurrentUser();
         Expense expense = new Expense();
 
         expense.setTitle(req.getTitle());
@@ -176,7 +156,7 @@ public class ExpenseService {
      * @return List of ExpenseResponse
      */
     public List<ExpenseResponse> getExpenses() {
-        User currentUser = getCurrentUser();
+        User currentUser = userService.getCurrentUser();
         List<Expense> expenses = repo.findByUserId(currentUser.getId());
 
         return expenses.stream()
@@ -195,7 +175,7 @@ public class ExpenseService {
         Expense existingExpense = repo.findById(id)
                 .orElseThrow(() -> new ApiRequestException("Transaction not found with the specified ID", HttpStatus.NOT_FOUND));
 
-        User currentUser = getCurrentUser();
+        User currentUser = userService.getCurrentUser();
 
         // Enforce user isolation
         if (!existingExpense.getUser().getId().equals(currentUser.getId())) {
@@ -250,7 +230,7 @@ public class ExpenseService {
         Expense expenseToDelete = repo.findById(id)
                 .orElseThrow(() -> new ApiRequestException("Transaction not found with the specified ID", HttpStatus.NOT_FOUND));
 
-        User currentUser = getCurrentUser();
+        User currentUser = userService.getCurrentUser();
 
         // Enforce user isolation
         if (!expenseToDelete.getUser().getId().equals(currentUser.getId())) {
