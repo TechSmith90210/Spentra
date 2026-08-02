@@ -581,36 +581,36 @@ export default function DashboardPage() {
       <Modal
         isOpen={showMonthModal}
         onClose={() => setShowMonthModal(false)}
-        title={`${monthModalSummary.monthName} ${focusedYear} Insights Summary`}
+        title={`${monthModalSummary.monthName} ${focusedYear} Insights`}
         size="lg"
       >
-        <div className="space-y-6">
-          {/* Key Stats Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="p-4 bg-surface-container-low rounded-2xl border border-outline-variant/10">
-              <p className="text-xs uppercase tracking-wider text-on-surface-variant font-medium">Income</p>
-              <p className="text-2xl font-bold text-income mt-1">
+        <div className="space-y-4 sm:space-y-6">
+          {/* Key Stats Cards - Responsive 3 grid */}
+          <div className="grid grid-cols-3 gap-2 sm:gap-4">
+            <div className="p-2.5 sm:p-4 bg-surface-container-low rounded-xl sm:rounded-2xl border border-outline-variant/10 min-w-0">
+              <p className="text-[10px] sm:text-xs uppercase tracking-wider text-on-surface-variant font-semibold truncate">Income</p>
+              <p className="text-xs sm:text-2xl font-extrabold text-income mt-0.5 sm:mt-1 truncate">
                 +{formatCurrency(monthModalSummary.income, currency)}
               </p>
             </div>
-            <div className="p-4 bg-surface-container-low rounded-2xl border border-outline-variant/10">
-              <p className="text-xs uppercase tracking-wider text-on-surface-variant font-medium">Expenses</p>
-              <p className="text-2xl font-bold text-error mt-1">
+            <div className="p-2.5 sm:p-4 bg-surface-container-low rounded-xl sm:rounded-2xl border border-outline-variant/10 min-w-0">
+              <p className="text-[10px] sm:text-xs uppercase tracking-wider text-on-surface-variant font-semibold truncate">Expenses</p>
+              <p className="text-xs sm:text-2xl font-extrabold text-error mt-0.5 sm:mt-1 truncate">
                 -{formatCurrency(monthModalSummary.expenses, currency)}
               </p>
             </div>
-            <div className="p-4 bg-surface-container-low rounded-2xl border border-outline-variant/10">
-              <p className="text-xs uppercase tracking-wider text-on-surface-variant font-medium">Net Savings</p>
-              <p className={`text-2xl font-bold mt-1 ${monthModalSummary.net >= 0 ? 'text-income' : 'text-error'}`}>
+            <div className="p-2.5 sm:p-4 bg-surface-container-low rounded-xl sm:rounded-2xl border border-outline-variant/10 min-w-0">
+              <p className="text-[10px] sm:text-xs uppercase tracking-wider text-on-surface-variant font-semibold truncate">Net</p>
+              <p className={`text-xs sm:text-2xl font-extrabold mt-0.5 sm:mt-1 truncate ${monthModalSummary.net >= 0 ? 'text-income' : 'text-error'}`}>
                 {formatCurrency(monthModalSummary.net, currency)}
               </p>
             </div>
           </div>
 
           {/* Dynamic Insight Banner */}
-          <div className="p-4 bg-tertiary/10 border border-tertiary/20 rounded-2xl flex items-start gap-3">
-            <Sparkles className="w-5 h-5 text-tertiary shrink-0 mt-0.5" />
-            <div className="text-xs sm:text-sm text-on-surface">
+          <div className="p-3 sm:p-4 bg-tertiary/10 border border-tertiary/20 rounded-xl sm:rounded-2xl flex items-start gap-2.5 sm:gap-3">
+            <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-tertiary shrink-0 mt-0.5" />
+            <div className="text-xs sm:text-sm text-on-surface leading-relaxed">
               {monthModalSummary.monthTxs.length === 0 ? (
                 <p>No transaction data logged for {monthModalSummary.monthName} {focusedYear}.</p>
               ) : (
@@ -619,7 +619,7 @@ export default function DashboardPage() {
                   <span className="font-bold">{monthModalSummary.monthTxs.length} transaction(s)</span> total carrying{' '}
                   <span className="font-bold">{formatCurrency(monthModalSummary.expenses, currency)}</span> in expenses.
                   {monthModalSummary.categories.length > 0 && (
-                    <span> Top spending category: <span className="font-bold">"{monthModalSummary.categories[0].name}"</span> ({formatCurrency(monthModalSummary.categories[0].amount, currency)}).</span>
+                    <span> Top category: <span className="font-bold">"{monthModalSummary.categories[0].name}"</span> ({formatCurrency(monthModalSummary.categories[0].amount, currency)}).</span>
                   )}
                 </p>
               )}
@@ -629,18 +629,18 @@ export default function DashboardPage() {
           {/* Category Breakdown for Month */}
           {monthModalSummary.categories.length > 0 && (
             <div>
-              <h4 className="text-sm font-bold text-on-surface mb-3 flex items-center gap-2">
-                <PieChart className="w-4 h-4 text-tertiary" />
+              <h4 className="text-xs sm:text-sm font-bold text-on-surface mb-2 sm:mb-3 flex items-center gap-2">
+                <PieChart className="w-4 h-4 text-tertiary shrink-0" />
                 Category Breakdown ({monthModalSummary.monthName})
               </h4>
-              <div className="space-y-3 bg-surface-container-low p-4 rounded-2xl border border-outline-variant/10">
+              <div className="space-y-2.5 sm:space-y-3 bg-surface-container-low p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-outline-variant/10">
                 {monthModalSummary.categories.map((cat) => (
                   <div key={cat.name}>
                     <div className="flex justify-between text-xs font-semibold mb-1">
-                      <span className="text-on-surface">{cat.name}</span>
-                      <span className="text-on-surface">{formatCurrency(cat.amount, currency)} ({cat.percentage}%)</span>
+                      <span className="text-on-surface truncate pr-2">{cat.name}</span>
+                      <span className="text-on-surface shrink-0">{formatCurrency(cat.amount, currency)} ({cat.percentage}%)</span>
                     </div>
-                    <div className="w-full h-2 bg-surface-container-highest rounded-full overflow-hidden">
+                    <div className="w-full h-1.5 sm:h-2 bg-surface-container-highest rounded-full overflow-hidden">
                       <div
                         className="h-full bg-tertiary rounded-full transition-all duration-300"
                         style={{ width: `${Math.min(cat.percentage, 100)}%` }}
@@ -654,24 +654,24 @@ export default function DashboardPage() {
 
           {/* Transactions List for Month */}
           <div>
-            <h4 className="text-sm font-bold text-on-surface mb-3 flex items-center gap-2">
-              <Receipt className="w-4 h-4 text-tertiary" />
+            <h4 className="text-xs sm:text-sm font-bold text-on-surface mb-2 sm:mb-3 flex items-center gap-2">
+              <Receipt className="w-4 h-4 text-tertiary shrink-0" />
               Transactions in {monthModalSummary.monthName} {focusedYear} ({monthModalSummary.monthTxs.length})
             </h4>
             {monthModalSummary.monthTxs.length === 0 ? (
               <p className="text-xs text-on-surface-variant py-4 text-center">No transactions recorded for this month.</p>
             ) : (
-              <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+              <div className="space-y-2 max-h-48 sm:max-h-60 overflow-y-auto pr-1">
                 {monthModalSummary.monthTxs.map((tx) => (
-                  <div key={tx.id} className="flex items-center justify-between p-3 bg-surface-container-low rounded-xl border border-outline-variant/5 text-xs">
-                    <div className="flex-1 min-w-0">
+                  <div key={tx.id} className="flex items-center justify-between p-2.5 sm:p-3 bg-surface-container-low rounded-xl border border-outline-variant/5 text-xs">
+                    <div className="flex-1 min-w-0 pr-2">
                       <p className="font-semibold text-on-surface truncate">{tx.title}</p>
-                      <p className="text-[10px] text-on-surface-variant">
+                      <p className="text-[10px] text-on-surface-variant truncate">
                         {tx.category?.name || 'Uncategorized'} · {formatDate(tx.transactionDate)}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2 ml-3 shrink-0">
-                      <span className={`font-bold ${tx.type === 'CREDIT' ? 'text-income' : 'text-error'}`}>
+                    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                      <span className={`font-bold text-xs sm:text-sm ${tx.type === 'CREDIT' ? 'text-income' : 'text-error'}`}>
                         {tx.type === 'CREDIT' ? '+' : '-'}{formatCurrency(tx.amount, currency)}
                       </span>
                       <Badge variant={tx.type === 'CREDIT' ? 'income' : 'expense'} size="sm">

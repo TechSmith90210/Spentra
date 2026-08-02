@@ -131,32 +131,39 @@ export default function Modal({
         className={[
           'w-full',
           sizeStyles[size],
+          'max-h-[90vh] sm:max-h-[85vh]',
+          'flex flex-col',
           'bg-surface-container-lowest',
-          'rounded-t-[2rem] sm:rounded-[1.5rem] shadow-2xl',
-          'p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:pb-6',
+          'rounded-t-[2.5rem] sm:rounded-[1.5rem] shadow-2xl',
+          'p-5 sm:p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:pb-6',
           // Animations
           'animate-slide-up sm:animate-scale-in',
         ].join(' ')}
       >
+        {/* Mobile Drag Handle Pill */}
+        <div className="w-12 h-1 bg-outline-variant/30 rounded-full mx-auto mb-3 shrink-0 sm:hidden" />
+
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-4 sm:mb-6 shrink-0">
           {title && (
-              <h2 className="text-xl font-bold tracking-tight text-on-surface">
-                {title}
-              </h2>
-            )}
-            <button
-              onClick={onClose}
-              className="p-1.5 rounded-lg hover:bg-surface-container-high transition-colors text-on-surface-variant hover:text-on-surface cursor-pointer"
-              aria-label="Close modal"
-              type="button"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
+            <h2 className="text-base sm:text-xl font-bold tracking-tight text-on-surface truncate pr-2">
+              {title}
+            </h2>
+          )}
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-lg hover:bg-surface-container-high transition-colors text-on-surface-variant hover:text-on-surface cursor-pointer shrink-0"
+            aria-label="Close modal"
+            type="button"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
 
         {/* Body */}
-        <div>{children}</div>
+        <div className="overflow-y-auto min-h-0 flex-1 pr-1 -mr-1">
+          {children}
+        </div>
       </div>
     </div>
   );
