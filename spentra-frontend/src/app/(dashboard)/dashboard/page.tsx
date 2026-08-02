@@ -8,7 +8,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, Receipt, Sparkles } from 'lucide-react';
+import { TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, Receipt, Sparkles, ChevronLeft, ChevronRight, Calendar, PieChart } from 'lucide-react';
 import { getTransactions } from '@/lib/api/transactions';
 import { getBudgetSummary } from '@/lib/api/budgets';
 import { formatCurrency, getCurrentMonth, formatDate } from '@/lib/utils';
@@ -18,6 +18,7 @@ import { useSettings } from '@/providers/SettingsProvider';
 import Skeleton from '@/components/Skeleton';
 import EmptyState from '@/components/EmptyState';
 import Badge from '@/components/Badge';
+import Modal from '@/components/Modal';
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -26,6 +27,11 @@ export default function DashboardPage() {
   const [budgets, setBudgets] = useState<BudgetSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  // Month navigation and Modal State
+  const [focusedMonthIndex, setFocusedMonthIndex] = useState<number>(new Date().getMonth());
+  const [focusedYear, setFocusedYear] = useState<number>(new Date().getFullYear());
+  const [showMonthModal, setShowMonthModal] = useState<boolean>(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -82,6 +88,99 @@ export default function DashboardPage() {
 
     return { totalIncome, totalExpenses, balance, categories, recentTransactions };
   }, [transactions]);
+
+  /** Computed monthly spending trends for all 12 months */
+  const { monthlySpending, activeYear } = useMemo(() => {
+    const nowYear = new Date().getFullYear();
+    let targetYear = nowYear;
+
+    const txYears = transactions
+      .map((t) => {
+        if (!t.transactionDate) return null;
+        const y = parseInt(t.transactionDate.split('T')[0].split('-')[0], 10);
+        return isNaN(y) ? null : y;
+      })
+      .filter((y): y is number => y !== null);
+
+    if (txYears.length > 0 && !txYears.includes(nowYear)) {
+      targetYear = Math.max(...txYears);
+    }
+
+    const totals = new Array(12).fill(0);
+
+    transactions.forEach((t) => {
+      if (t.type !== 'EXPENSE' || !t.transactionDate) return;
+      const dateStr = t.transactionDate.split('T')[0];
+      const parts = dateStr.split('-');
+      if (parts.length >= 2) {
+        const year = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1; // 0-indexed (0=Jan, 6=Jul, 7=Aug)
+        if (year === targetYear && month >= 0 && month < 12) {
+          totals[month] += t.amount;
+        }
+      }
+    });
+
+    return { monthlySpending: totals, activeYear: targetYear };
+  }, [transactions]);
+
+  const maxMonthlyExpense = useMemo(
+    () => Math.max(...monthlySpending, 1),
+    [monthlySpending]
+  );
+
+  /** Data computed specifically for the selected month summary modal */
+  const monthModalSummary = useMemo(() => {
+    const monthTxs = transactions.filter((t) => {
+      if (!t.transactionDate) return false;
+      const parts = t.transactionDate.split('T')[0].split('-');
+      if (parts.length < 2) return false;
+      const y = parseInt(parts[0], 10);
+      const m = parseInt(parts[1], 10) - 1;
+      return y === focusedYear && m === focusedMonthIndex;
+    });
+
+    const income = monthTxs
+      .filter((t) => t.type === 'CREDIT')
+      .reduce((s, t) => s + t.amount, 0);
+
+    const expenses = monthTxs
+      .filter((t) => t.type === 'EXPENSE')
+      .reduce((s, t) => s + t.amount, 0);
+
+    const net = income - expenses;
+
+    const catMap = new Map<string, number>();
+    monthTxs
+      .filter((t) => t.type === 'EXPENSE')
+      .forEach((t) => {
+        const catName = t.category?.name || 'Uncategorized';
+        catMap.set(catName, (catMap.get(catName) || 0) + t.amount);
+      });
+
+    const categories = Array.from(catMap.entries())
+      .map(([name, amount]) => ({
+        name,
+        amount,
+        percentage: expenses > 0 ? Math.round((amount / expenses) * 100) : 0,
+      }))
+      .sort((a, b) => b.amount - a.amount);
+
+    const sortedTxs = [...monthTxs].sort(
+      (a, b) => new Date(b.transactionDate).getTime() - new Date(a.transactionDate).getTime()
+    );
+
+    const monthName = new Date(focusedYear, focusedMonthIndex, 1).toLocaleDateString('en-US', { month: 'long' });
+
+    return {
+      monthName,
+      monthTxs: sortedTxs,
+      income,
+      expenses,
+      net,
+      categories,
+    };
+  }, [transactions, focusedYear, focusedMonthIndex]);
 
   /** Computed financial insights */
   const insights = useMemo(() => {
@@ -218,10 +317,51 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
-        <div className="flex items-center gap-3 px-5 py-3 bg-surface-container-low rounded-xl">
-          <span className="text-sm font-semibold text-on-surface">
-            {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-          </span>
+        <div className="flex items-center gap-1.5 p-1.5 bg-surface-container-low rounded-xl border border-outline-variant/10 shadow-sm">
+          <button
+            onClick={() => {
+              let newM = focusedMonthIndex - 1;
+              let newY = focusedYear;
+              if (newM < 0) {
+                newM = 11;
+                newY -= 1;
+              }
+              setFocusedMonthIndex(newM);
+              setFocusedYear(newY);
+            }}
+            className="p-1.5 rounded-lg hover:bg-surface-container-highest transition-colors cursor-pointer text-on-surface-variant hover:text-on-surface active:scale-95"
+            title="Previous Month"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+
+          <button
+            onClick={() => setShowMonthModal(true)}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-surface-container-highest transition-colors cursor-pointer text-sm font-semibold text-on-surface active:scale-95"
+            title="Click to view month insights summary"
+          >
+            <Calendar className="w-4 h-4 text-tertiary" />
+            <span>
+              {new Date(focusedYear, focusedMonthIndex, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+            </span>
+          </button>
+
+          <button
+            onClick={() => {
+              let newM = focusedMonthIndex + 1;
+              let newY = focusedYear;
+              if (newM > 11) {
+                newM = 0;
+                newY += 1;
+              }
+              setFocusedMonthIndex(newM);
+              setFocusedYear(newY);
+            }}
+            className="p-1.5 rounded-lg hover:bg-surface-container-highest transition-colors cursor-pointer text-on-surface-variant hover:text-on-surface active:scale-95"
+            title="Next Month"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
         </div>
       </header>
 
@@ -281,42 +421,79 @@ export default function DashboardPage() {
         {/* Spending Trends Chart */}
         <div className="lg:col-span-2 bg-surface-container-lowest p-8 rounded-[1.5rem] shadow-sm flex flex-col animate-slide-up stagger-4 hover:-translate-y-0.5 transition-all duration-300 ease-out" style={{ animationFillMode: "both" }}>
           <div className="flex justify-between items-center mb-10">
-            <h4 className="text-xl font-bold tracking-tight text-on-surface">Spending Trends</h4>
+            <div>
+              <h4 className="text-xl font-bold tracking-tight text-on-surface">Spending Trends</h4>
+              <p className="text-xs text-on-surface-variant mt-0.5">Click any month to view detailed breakdown ({activeYear})</p>
+            </div>
             <div className="flex gap-4">
               <span className="flex items-center gap-2 text-xs font-medium text-on-surface-variant">
                 <span className="w-2 h-2 rounded-full bg-tertiary" /> Spending
               </span>
-              <span className="flex items-center gap-2 text-xs font-medium text-on-surface-variant">
-                <span className="w-2 h-2 rounded-full bg-surface-container-highest" /> Budget
-              </span>
             </div>
           </div>
-          {/* CSS-only bar chart */}
-          <div className="flex-grow flex items-end gap-2 h-64 relative">
-            <div className="absolute inset-0 flex flex-col justify-between">
+          {/* Real data bar chart */}
+          <div className="flex-grow flex items-end gap-2 h-64 relative pt-8">
+            <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
               {[...Array(4)].map((_, i) => (
                 <div key={i} className="border-b border-surface-container h-0 w-full" />
               ))}
             </div>
-            {/* Generate bars from monthly data or static placeholders */}
-            {['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].map((_, i) => {
-              const height = Math.max(10, Math.random() * 90);
-              const isHighlighted = i === new Date().getMonth();
+            {['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'].map((monthLabel, i) => {
+              const spent = monthlySpending[i];
+              const heightPercent = maxMonthlyExpense > 0 && spent > 0
+                ? Math.max(8, Math.round((spent / maxMonthlyExpense) * 100))
+                : 0;
+              const isCurrentMonth = i === new Date().getMonth() && activeYear === new Date().getFullYear();
+
               return (
                 <div
-                  key={i}
-                  className={`flex-1 rounded-t-lg transition-all ${
-                    isHighlighted ? 'bg-tertiary' : 'bg-surface-container-low hover:bg-tertiary/40'
-                  }`}
-                  style={{ height: `${height}%` }}
-                />
+                  key={monthLabel}
+                  onClick={() => {
+                    setFocusedMonthIndex(i);
+                    setFocusedYear(activeYear);
+                    setShowMonthModal(true);
+                  }}
+                  className="flex-1 flex flex-col items-center justify-end h-full relative group cursor-pointer hover:scale-[1.03] active:scale-95 transition-all"
+                >
+                  {/* Hover Tooltip */}
+                  <div className="absolute -top-10 opacity-0 group-hover:opacity-100 transition-all duration-200 bg-surface-container-highest text-on-surface text-[11px] font-bold px-2.5 py-1 rounded-lg shadow-md pointer-events-none z-20 whitespace-nowrap border border-outline-variant/10">
+                    {monthLabel}: {formatCurrency(spent, currency)} · Click for summary
+                  </div>
+
+                  {/* Bar */}
+                  <div
+                    className={`w-full rounded-t-lg transition-all duration-300 ${
+                      spent > 0
+                        ? isCurrentMonth
+                          ? 'bg-tertiary shadow-sm ring-2 ring-tertiary/30'
+                          : 'bg-tertiary/80 hover:bg-tertiary'
+                        : 'bg-surface-container-low hover:bg-surface-container-high'
+                    }`}
+                    style={{ height: `${heightPercent}%`, minHeight: spent > 0 ? '12px' : '4px' }}
+                  />
+                </div>
               );
             })}
           </div>
           <div className="flex justify-between mt-6 px-1">
-            {['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'].map((m) => (
-              <span key={m} className="text-[10px] text-on-surface-variant">{m}</span>
-            ))}
+            {['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'].map((m, i) => {
+              const isCurrentMonth = i === new Date().getMonth() && activeYear === new Date().getFullYear();
+              const hasData = monthlySpending[i] > 0;
+              return (
+                <span
+                  key={m}
+                  className={`text-[10px] ${
+                    isCurrentMonth
+                      ? 'text-tertiary font-extrabold'
+                      : hasData
+                      ? 'text-on-surface font-semibold'
+                      : 'text-on-surface-variant/70'
+                  }`}
+                >
+                  {m}
+                </span>
+              );
+            })}
           </div>
         </div>
 
@@ -399,6 +576,115 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+
+      {/* Month Insights Summary Modal */}
+      <Modal
+        isOpen={showMonthModal}
+        onClose={() => setShowMonthModal(false)}
+        title={`${monthModalSummary.monthName} ${focusedYear} Insights Summary`}
+        size="lg"
+      >
+        <div className="space-y-6">
+          {/* Key Stats Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="p-4 bg-surface-container-low rounded-2xl border border-outline-variant/10">
+              <p className="text-xs uppercase tracking-wider text-on-surface-variant font-medium">Income</p>
+              <p className="text-2xl font-bold text-income mt-1">
+                +{formatCurrency(monthModalSummary.income, currency)}
+              </p>
+            </div>
+            <div className="p-4 bg-surface-container-low rounded-2xl border border-outline-variant/10">
+              <p className="text-xs uppercase tracking-wider text-on-surface-variant font-medium">Expenses</p>
+              <p className="text-2xl font-bold text-error mt-1">
+                -{formatCurrency(monthModalSummary.expenses, currency)}
+              </p>
+            </div>
+            <div className="p-4 bg-surface-container-low rounded-2xl border border-outline-variant/10">
+              <p className="text-xs uppercase tracking-wider text-on-surface-variant font-medium">Net Savings</p>
+              <p className={`text-2xl font-bold mt-1 ${monthModalSummary.net >= 0 ? 'text-income' : 'text-error'}`}>
+                {formatCurrency(monthModalSummary.net, currency)}
+              </p>
+            </div>
+          </div>
+
+          {/* Dynamic Insight Banner */}
+          <div className="p-4 bg-tertiary/10 border border-tertiary/20 rounded-2xl flex items-start gap-3">
+            <Sparkles className="w-5 h-5 text-tertiary shrink-0 mt-0.5" />
+            <div className="text-xs sm:text-sm text-on-surface">
+              {monthModalSummary.monthTxs.length === 0 ? (
+                <p>No transaction data logged for {monthModalSummary.monthName} {focusedYear}.</p>
+              ) : (
+                <p>
+                  In <span className="font-bold">{monthModalSummary.monthName} {focusedYear}</span>, you logged{' '}
+                  <span className="font-bold">{monthModalSummary.monthTxs.length} transaction(s)</span> total carrying{' '}
+                  <span className="font-bold">{formatCurrency(monthModalSummary.expenses, currency)}</span> in expenses.
+                  {monthModalSummary.categories.length > 0 && (
+                    <span> Top spending category: <span className="font-bold">"{monthModalSummary.categories[0].name}"</span> ({formatCurrency(monthModalSummary.categories[0].amount, currency)}).</span>
+                  )}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Category Breakdown for Month */}
+          {monthModalSummary.categories.length > 0 && (
+            <div>
+              <h4 className="text-sm font-bold text-on-surface mb-3 flex items-center gap-2">
+                <PieChart className="w-4 h-4 text-tertiary" />
+                Category Breakdown ({monthModalSummary.monthName})
+              </h4>
+              <div className="space-y-3 bg-surface-container-low p-4 rounded-2xl border border-outline-variant/10">
+                {monthModalSummary.categories.map((cat) => (
+                  <div key={cat.name}>
+                    <div className="flex justify-between text-xs font-semibold mb-1">
+                      <span className="text-on-surface">{cat.name}</span>
+                      <span className="text-on-surface">{formatCurrency(cat.amount, currency)} ({cat.percentage}%)</span>
+                    </div>
+                    <div className="w-full h-2 bg-surface-container-highest rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-tertiary rounded-full transition-all duration-300"
+                        style={{ width: `${Math.min(cat.percentage, 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Transactions List for Month */}
+          <div>
+            <h4 className="text-sm font-bold text-on-surface mb-3 flex items-center gap-2">
+              <Receipt className="w-4 h-4 text-tertiary" />
+              Transactions in {monthModalSummary.monthName} {focusedYear} ({monthModalSummary.monthTxs.length})
+            </h4>
+            {monthModalSummary.monthTxs.length === 0 ? (
+              <p className="text-xs text-on-surface-variant py-4 text-center">No transactions recorded for this month.</p>
+            ) : (
+              <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                {monthModalSummary.monthTxs.map((tx) => (
+                  <div key={tx.id} className="flex items-center justify-between p-3 bg-surface-container-low rounded-xl border border-outline-variant/5 text-xs">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-on-surface truncate">{tx.title}</p>
+                      <p className="text-[10px] text-on-surface-variant">
+                        {tx.category?.name || 'Uncategorized'} · {formatDate(tx.transactionDate)}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 ml-3 shrink-0">
+                      <span className={`font-bold ${tx.type === 'CREDIT' ? 'text-income' : 'text-error'}`}>
+                        {tx.type === 'CREDIT' ? '+' : '-'}{formatCurrency(tx.amount, currency)}
+                      </span>
+                      <Badge variant={tx.type === 'CREDIT' ? 'income' : 'expense'} size="sm">
+                        {tx.type === 'CREDIT' ? 'Income' : 'Expense'}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
