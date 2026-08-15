@@ -36,9 +36,11 @@ import com.spentra.backend.repository.CategoryRepository;
 import com.spentra.backend.repository.ExpenseRepository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class GeminiService {
 
     private final CategoryRepository categoryRepository;
@@ -58,11 +60,14 @@ public class GeminiService {
 
     public TransactionDraftResponse parseText(String prompt) {
         if (apiKey == null || apiKey.isBlank()) {
+            log.warn("Gemini text parse requested but GEMINI_API_KEY is missing");
             throw new ApiRequestException("AI service temporarily unavailable.", HttpStatus.SERVICE_UNAVAILABLE);
         }
 
         User currentUser = userService.getCurrentUser();
         List<Category> categories = categoryRepository.findByUserIdOrUserIsNull(currentUser.getId());
+        log.info("Gemini text parse request started userId={} promptLength={} categoryCount={}",
+                currentUser.getId(), prompt != null ? prompt.length() : 0, categories.size());
         String systemPrompt = buildSystemPrompt(categories);
 
         try {
@@ -89,22 +94,31 @@ public class GeminiService {
 
             String url = "%s/%s:generateContent?key=%s".formatted(apiUrl, model, apiKey);
             String response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class).getBody();
-            return parseDraft(response, categories);
+            TransactionDraftResponse draft = parseDraft(response, categories);
+            log.info("Gemini text parse success userId={} title={} amount={} categoryId={} confidence={}",
+                    currentUser.getId(), draft.getTitle(), draft.getAmount(), draft.getCategoryId(), draft.getConfidence());
+            return draft;
         } catch (ApiRequestException e) {
+            log.warn("Gemini text parse failed userId={} status={} message={}",
+                    currentUser.getId(), e.getStatus(), e.getMessage());
             throw e;
         } catch (Exception e) {
+            log.error("Gemini text parse error userId={} message={}", currentUser.getId(), e.getMessage(), e);
             throw new ApiRequestException("Could not parse AI response. Please try again.", HttpStatus.BAD_REQUEST);
         }
     }
 
     public TransactionDraftResponse parseReceipt(MultipartFile file) {
         if (apiKey == null || apiKey.isBlank()) {
+            log.warn("Gemini receipt parse requested but GEMINI_API_KEY is missing");
             throw new ApiRequestException("AI service temporarily unavailable.", HttpStatus.SERVICE_UNAVAILABLE);
         }
         validateReceiptFile(file);
 
         User currentUser = userService.getCurrentUser();
         List<Category> categories = categoryRepository.findByUserIdOrUserIsNull(currentUser.getId());
+        log.info("Gemini receipt parse request started userId={} fileName={} contentType={} sizeBytes={} categoryCount={}",
+                currentUser.getId(), file.getOriginalFilename(), file.getContentType(), file.getSize(), categories.size());
         String systemPrompt = buildReceiptPrompt(categories);
 
         try {
@@ -140,10 +154,16 @@ public class GeminiService {
 
             String url = "%s/%s:generateContent?key=%s".formatted(apiUrl, model, apiKey);
             String response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class).getBody();
-            return parseDraft(response, categories);
+            TransactionDraftResponse draft = parseDraft(response, categories);
+            log.info("Gemini receipt parse success userId={} title={} amount={} categoryId={} confidence={}",
+                    currentUser.getId(), draft.getTitle(), draft.getAmount(), draft.getCategoryId(), draft.getConfidence());
+            return draft;
         } catch (ApiRequestException e) {
+            log.warn("Gemini receipt parse failed userId={} status={} message={}",
+                    currentUser.getId(), e.getStatus(), e.getMessage());
             throw e;
         } catch (Exception e) {
+            log.error("Gemini receipt parse error userId={} message={}", currentUser.getId(), e.getMessage(), e);
             throw new ApiRequestException("Could not parse AI response. Please try again.", HttpStatus.BAD_REQUEST);
         }
     }
@@ -151,14 +171,22 @@ public class GeminiService {
     public AiSummaryResponse getOrGenerateInsights(String yearMonth, String currencyCode) {
         UUID userId = userService.getCurrentUser().getId();
         YearMonth month = parseMonth(yearMonth);
+        log.info("AI insights request started userId={} month={} currency={}", userId, month, currencyCode);
         return aiSummaryRepository.findByUserIdAndYearMonth(userId, month)
-                .map(this::toResponse)
-                .orElseGet(() -> generateInsights(userId, month, currencyCode));
+                .map(summary -> {
+                    log.info("AI insights cache hit userId={} month={} summaryId={}", userId, month, summary.getId());
+                    return toResponse(summary);
+                })
+                .orElseGet(() -> {
+                    log.info("AI insights cache miss userId={} month={}", userId, month);
+                    return generateInsights(userId, month, currencyCode);
+                });
     }
 
     public AiSummaryResponse refreshInsights(String yearMonth, String currencyCode) {
         UUID userId = userService.getCurrentUser().getId();
         YearMonth month = parseMonth(yearMonth);
+        log.info("AI insights refresh requested userId={} month={} currency={}", userId, month, currencyCode);
         aiSummaryRepository.deleteByUserIdAndYearMonth(userId, month);
         return generateInsights(userId, month, currencyCode);
     }
@@ -197,6 +225,7 @@ public class GeminiService {
                 .toList();
 
         if (expenses.isEmpty()) {
+            log.info("AI insights empty-state userId={} month={}", userId, month);
             return new AiSummaryResponse(null, month.toString(), "Not enough data yet. Add some transactions and check back!", 0.0, null, LocalDateTime.now());
         }
 
@@ -214,8 +243,11 @@ public class GeminiService {
         double topAmount = byCategory.getOrDefault(topCategory, 0.0);
         int topPct = totalSpent > 0 ? (int) Math.round((topAmount / totalSpent) * 100) : 0;
         String prompt = buildInsightsPrompt(month, currencyCode, totalSpent, byCategory, expenses.size());
+        log.info("AI insights generation prepared userId={} month={} totalSpent={} topCategory={} txCount={}",
+                userId, month, totalSpent, topCategory, expenses.size());
         String summary = requestGeminiSummary(prompt);
         if (summary == null || summary.isBlank()) {
+            log.warn("AI insights Gemini summary unavailable userId={} month={} falling back to local summary", userId, month);
             summary = String.format(
                     "You spent %s%.2f this month. %s led your spending with %d%% of total spend. " +
                     "Spending was concentrated in a few categories. Try capping %s next month to save more.",
@@ -231,6 +263,7 @@ public class GeminiService {
         summaryEntity.setGeneratedAt(LocalDateTime.now());
 
         AiSummary saved = aiSummaryRepository.save(summaryEntity);
+        log.info("AI insights saved userId={} month={} summaryId={}", userId, month, saved.getId());
         return toResponse(saved);
     }
 
@@ -270,6 +303,7 @@ public class GeminiService {
 
     private String requestGeminiSummary(String prompt) {
         if (apiKey == null || apiKey.isBlank()) {
+            log.warn("AI insights Gemini request skipped because GEMINI_API_KEY is missing");
             return null;
         }
 
@@ -296,6 +330,7 @@ public class GeminiService {
             String response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class).getBody();
             return parseGeminiText(response);
         } catch (Exception e) {
+            log.error("AI insights Gemini request failed message={}", e.getMessage(), e);
             return null;
         }
     }
@@ -364,9 +399,11 @@ public class GeminiService {
 
     private void validateReceiptFile(MultipartFile file) {
         if (file == null || file.isEmpty()) {
+            log.warn("Receipt validation failed: missing file");
             throw new ApiRequestException("Image file is required.", HttpStatus.BAD_REQUEST);
         }
         if (file.getSize() > 10 * 1024 * 1024L) {
+            log.warn("Receipt validation failed: file too large sizeBytes={}", file.getSize());
             throw new ApiRequestException("Image file size must be under 10 MB.", HttpStatus.BAD_REQUEST);
         }
 
@@ -377,6 +414,7 @@ public class GeminiService {
                 || mimeType.equals("image/webp")
                 || mimeType.equals("image/heic");
         if (!allowed) {
+            log.warn("Receipt validation failed: unsupported mimeType={} fileName={}", mimeType, file.getOriginalFilename());
             throw new ApiRequestException("Unsupported image format. Use JPEG, PNG, WebP, or HEIC.", HttpStatus.BAD_REQUEST);
         }
     }

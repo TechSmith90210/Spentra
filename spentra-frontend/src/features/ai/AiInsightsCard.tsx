@@ -13,7 +13,6 @@ export default function AiInsightsCard() {
   const [data, setData] = useState<AiSummaryResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState('');
   const month = getCurrentMonth();
 
   useEffect(() => {
@@ -21,12 +20,21 @@ export default function AiInsightsCard() {
 
     async function loadInsights() {
       setLoading(true);
-      setError('');
       try {
         const result = await getAiInsights(month, currency);
         if (mounted) setData(result);
       } catch (err: unknown) {
-        if (mounted) setError(err instanceof Error ? err.message : 'Failed to load AI insights.');
+        if (mounted) {
+          console.error('Failed to load AI insights', err);
+          setData({
+            id: null,
+            yearMonth: month,
+            summaryText: 'AI insights are temporarily unavailable. Check your transactions and try again soon.',
+            totalSpent: 0,
+            topCategory: null,
+            generatedAt: new Date().toISOString(),
+          });
+        }
       } finally {
         if (mounted) setLoading(false);
       }
@@ -47,12 +55,19 @@ export default function AiInsightsCard() {
 
   async function handleRefreshClick() {
     setRefreshing(true);
-    setError('');
     try {
       const result = await refreshAiInsights(month, currency);
       setData(result);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to refresh insights.');
+      console.error('Failed to refresh AI insights', err);
+      setData({
+        id: null,
+        yearMonth: month,
+        summaryText: 'AI insights are temporarily unavailable. Check your transactions and try again soon.',
+        totalSpent: 0,
+        topCategory: null,
+        generatedAt: new Date().toISOString(),
+      });
     } finally {
       setRefreshing(false);
     }
@@ -80,7 +95,7 @@ export default function AiInsightsCard() {
           </h3>
         </div>
 
-        {!error && data?.summaryText && data.summaryText !== 'Not enough data yet. Add some transactions and check back!' && (
+        {data?.summaryText && data.summaryText !== 'Not enough data yet. Add some transactions and check back!' && (
           <button
             type="button"
             onClick={handleRefreshClick}
@@ -93,19 +108,13 @@ export default function AiInsightsCard() {
         )}
       </div>
 
-      {error && (
-        <div className="px-4 py-3 bg-error-container/20 text-on-error-container rounded-xl text-sm">
-          {error}
-        </div>
-      )}
-
-      {!error && data?.summaryText === 'Not enough data yet. Add some transactions and check back!' && (
+      {data?.summaryText === 'Not enough data yet. Add some transactions and check back!' && (
         <div className="rounded-2xl bg-surface-container-low p-5 text-sm text-on-surface-variant">
           Not enough data yet. Add some transactions and check back!
         </div>
       )}
 
-      {!error && data?.summaryText && data.summaryText !== 'Not enough data yet. Add some transactions and check back!' && (
+      {data?.summaryText && data.summaryText !== 'Not enough data yet. Add some transactions and check back!' && (
         <>
           <p className="text-sm leading-6 text-on-surface-variant whitespace-pre-line">
             {data.summaryText}
