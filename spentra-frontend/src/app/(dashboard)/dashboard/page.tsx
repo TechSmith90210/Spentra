@@ -20,6 +20,15 @@ import EmptyState from '@/components/EmptyState';
 import Badge from '@/components/Badge';
 import Modal from '@/components/Modal';
 
+export interface MonthlySpendingItem {
+  year: number;
+  monthIndex: number;
+  monthKey: string;
+  label: string;
+  fullLabel: string;
+  spent: number;
+}
+
 export default function DashboardPage() {
   const { user } = useAuth();
   const { currency } = useSettings();
@@ -89,44 +98,109 @@ export default function DashboardPage() {
     return { totalIncome, totalExpenses, balance, categories, recentTransactions };
   }, [transactions]);
 
-  /** Computed monthly spending trends for all 12 months */
-  const { monthlySpending, activeYear } = useMemo(() => {
-    const nowYear = new Date().getFullYear();
-    let targetYear = nowYear;
+  /** Computed monthly spending trends dynamically for all months with spending data */
+  const { monthlySpendingList, activeYearLabel } = useMemo(() => {
+    const spendingMap = new Map<string, number>();
 
-    const txYears = transactions
-      .map((t) => {
-        if (!t.transactionDate) return null;
-        const y = parseInt(t.transactionDate.split('T')[0].split('-')[0], 10);
-        return isNaN(y) ? null : y;
-      })
-      .filter((y): y is number => y !== null);
-
-    if (txYears.length > 0 && !txYears.includes(nowYear)) {
-      targetYear = Math.max(...txYears);
-    }
-
-    const totals = new Array(12).fill(0);
-
+    // 1. Group expense transactions by "YYYY-MM" key
     transactions.forEach((t) => {
-      if (t.type !== 'EXPENSE' || !t.transactionDate) return;
-      const dateStr = t.transactionDate.split('T')[0];
-      const parts = dateStr.split('-');
+      if (t.type === "CREDIT" || !t.transactionDate || typeof t.amount !== "number" || t.amount <= 0) return;
+      const dateStr = t.transactionDate.split("T")[0].split(" ")[0];
+      const parts = dateStr.split("-");
       if (parts.length >= 2) {
-        const year = parseInt(parts[0], 10);
-        const month = parseInt(parts[1], 10) - 1; // 0-indexed (0=Jan, 6=Jul, 7=Aug)
-        if (year === targetYear && month >= 0 && month < 12) {
-          totals[month] += t.amount;
+        const y = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10);
+        if (!isNaN(y) && !isNaN(m) && m >= 1 && m <= 12) {
+          const monthKey = `${y}-${String(m).padStart(2, "0")}`;
+          spendingMap.set(monthKey, (spendingMap.get(monthKey) || 0) + t.amount);
         }
       }
     });
 
-    return { monthlySpending: totals, activeYear: targetYear };
+    // 2. Collect all month keys with transactions
+    const monthKeysWithTx = Array.from(spendingMap.keys()).sort();
+
+    let startYear: number;
+    let startMonth: number; // 1-indexed
+    let endYear: number;
+    let endMonth: number;   // 1-indexed
+
+    const now = new Date();
+    const nowYear = now.getFullYear();
+    const nowMonth = now.getMonth() + 1; // 1-indexed
+
+    if (monthKeysWithTx.length === 0) {
+      // Fall back to a default 6-month window ending in the current month
+      const endDate = new Date(nowYear, nowMonth - 1, 1);
+      const startDate = new Date(nowYear, nowMonth - 6, 1);
+      startYear = startDate.getFullYear();
+      startMonth = startDate.getMonth() + 1;
+      endYear = endDate.getFullYear();
+      endMonth = endDate.getMonth() + 1;
+    } else {
+      const firstParts = monthKeysWithTx[0].split("-").map(Number);
+      const lastParts = monthKeysWithTx[monthKeysWithTx.length - 1].split("-").map(Number);
+
+      startYear = firstParts[0];
+      startMonth = firstParts[1];
+
+      if (lastParts[0] > nowYear || (lastParts[0] === nowYear && lastParts[1] >= nowMonth)) {
+        endYear = lastParts[0];
+        endMonth = lastParts[1];
+      } else {
+        endYear = nowYear;
+        endMonth = nowMonth;
+      }
+    }
+
+    // 3. Generate contiguous sequence of month items from start to end
+    const items: MonthlySpendingItem[] = [];
+    const uniqueYears = new Set<number>();
+
+    let curY = startYear;
+    let curM = startMonth;
+
+    while (curY < endYear || (curY === endYear && curM <= endMonth)) {
+      const monthKey = `${curY}-${String(curM).padStart(2, "0")}`;
+      const spent = spendingMap.get(monthKey) || 0;
+      const dateObj = new Date(curY, curM - 1, 1);
+
+      const shortMonth = dateObj.toLocaleDateString("en-US", { month: "short" }).toUpperCase();
+      const fullLabel = dateObj.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+
+      uniqueYears.add(curY);
+
+      items.push({
+        year: curY,
+        monthIndex: curM - 1,
+        monthKey,
+        label: shortMonth,
+        fullLabel,
+        spent,
+      });
+
+      curM++;
+      if (curM > 12) {
+        curM = 1;
+        curY++;
+      }
+    }
+
+    // 4. Determine year label for chart header
+    let label = "";
+    if (uniqueYears.size === 1) {
+      label = String(Array.from(uniqueYears)[0]);
+    } else if (uniqueYears.size > 1) {
+      const sortedYears = Array.from(uniqueYears).sort((a, b) => a - b);
+      label = `${sortedYears[0]} – ${sortedYears[sortedYears.length - 1]}`;
+    }
+
+    return { monthlySpendingList: items, activeYearLabel: label };
   }, [transactions]);
 
   const maxMonthlyExpense = useMemo(
-    () => Math.max(...monthlySpending, 1),
-    [monthlySpending]
+    () => Math.max(...monthlySpendingList.map((m) => m.spent), 1),
+    [monthlySpendingList]
   );
 
   /** Data computed specifically for the selected month summary modal */
@@ -423,7 +497,7 @@ export default function DashboardPage() {
           <div className="flex justify-between items-center mb-10">
             <div>
               <h4 className="text-xl font-bold tracking-tight text-on-surface">Spending Trends</h4>
-              <p className="text-xs text-on-surface-variant mt-0.5">Click any month to view detailed breakdown ({activeYear})</p>
+              <p className="text-xs text-on-surface-variant mt-0.5">Click any month to view detailed breakdown {activeYearLabel ? `(${activeYearLabel})` : ""}</p>
             </div>
             <div className="flex gap-4">
               <span className="flex items-center gap-2 text-xs font-medium text-on-surface-variant">
@@ -438,26 +512,26 @@ export default function DashboardPage() {
                 <div key={i} className="border-b border-surface-container h-0 w-full" />
               ))}
             </div>
-            {['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'].map((monthLabel, i) => {
-              const spent = monthlySpending[i];
+            {monthlySpendingList.map((item) => {
+              const spent = item.spent;
               const heightPercent = maxMonthlyExpense > 0 && spent > 0
                 ? Math.max(8, Math.round((spent / maxMonthlyExpense) * 100))
                 : 0;
-              const isCurrentMonth = i === new Date().getMonth() && activeYear === new Date().getFullYear();
+              const isCurrentMonth = item.monthIndex === new Date().getMonth() && item.year === new Date().getFullYear();
 
               return (
                 <div
-                  key={monthLabel}
+                  key={item.monthKey}
                   onClick={() => {
-                    setFocusedMonthIndex(i);
-                    setFocusedYear(activeYear);
+                    setFocusedMonthIndex(item.monthIndex);
+                    setFocusedYear(item.year);
                     setShowMonthModal(true);
                   }}
                   className="flex-1 flex flex-col items-center justify-end h-full relative group cursor-pointer hover:scale-[1.03] active:scale-95 transition-all"
                 >
                   {/* Hover Tooltip */}
                   <div className="absolute -top-10 opacity-0 group-hover:opacity-100 transition-all duration-200 bg-surface-container-highest text-on-surface text-[11px] font-bold px-2.5 py-1 rounded-lg shadow-md pointer-events-none z-20 whitespace-nowrap border border-outline-variant/10">
-                    {monthLabel}: {formatCurrency(spent, currency)} · Click for summary
+                    {item.label}: {formatCurrency(spent, currency)} · Click for summary
                   </div>
 
                   {/* Bar */}
@@ -465,32 +539,32 @@ export default function DashboardPage() {
                     className={`w-full rounded-t-lg transition-all duration-300 ${
                       spent > 0
                         ? isCurrentMonth
-                          ? 'bg-tertiary shadow-sm ring-2 ring-tertiary/30'
-                          : 'bg-tertiary/80 hover:bg-tertiary'
-                        : 'bg-surface-container-low hover:bg-surface-container-high'
+                          ? "bg-tertiary shadow-sm ring-2 ring-tertiary/30"
+                          : "bg-tertiary/80 hover:bg-tertiary"
+                        : "bg-surface-container-low hover:bg-surface-container-high"
                     }`}
-                    style={{ height: `${heightPercent}%`, minHeight: spent > 0 ? '12px' : '4px' }}
+                    style={{ height: `${heightPercent}%`, minHeight: spent > 0 ? "12px" : "4px" }}
                   />
                 </div>
               );
             })}
           </div>
           <div className="flex justify-between mt-6 px-1">
-            {['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'].map((m, i) => {
-              const isCurrentMonth = i === new Date().getMonth() && activeYear === new Date().getFullYear();
-              const hasData = monthlySpending[i] > 0;
+            {monthlySpendingList.map((item) => {
+              const isCurrentMonth = item.monthIndex === new Date().getMonth() && item.year === new Date().getFullYear();
+              const hasData = item.spent > 0;
               return (
                 <span
-                  key={m}
+                  key={item.monthKey}
                   className={`text-[10px] ${
                     isCurrentMonth
-                      ? 'text-tertiary font-extrabold'
+                      ? "text-tertiary font-extrabold"
                       : hasData
-                      ? 'text-on-surface font-semibold'
-                      : 'text-on-surface-variant/70'
+                      ? "text-on-surface font-semibold"
+                      : "text-on-surface-variant/70"
                   }`}
                 >
-                  {m}
+                  {item.label}
                 </span>
               );
             })}
