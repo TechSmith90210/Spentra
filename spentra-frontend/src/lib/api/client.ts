@@ -68,8 +68,9 @@ export async function apiClient<T>(
   const url = `${API_BASE_URL}${endpoint}`;
 
   /* ── Build headers ──────────────────────────────────────────────────────── */
+  const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
+    ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
     ...(options.headers as Record<string, string> | undefined),
   };
 

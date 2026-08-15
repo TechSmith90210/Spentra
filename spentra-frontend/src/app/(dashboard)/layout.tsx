@@ -10,6 +10,7 @@ import { useAuth } from '@/providers/AuthProvider';
 import Navbar from '@/components/Navbar';
 import MobileNav from '@/components/MobileNav';
 import AddTransactionModal from '@/features/transactions/AddTransactionModal';
+import LiquidQuickAddChip from '@/components/LiquidQuickAddChip';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();

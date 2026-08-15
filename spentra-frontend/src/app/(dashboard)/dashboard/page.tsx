@@ -19,6 +19,7 @@ import Skeleton from '@/components/Skeleton';
 import EmptyState from '@/components/EmptyState';
 import Badge from '@/components/Badge';
 import Modal from '@/components/Modal';
+import AiInsightsCard from '@/features/ai/AiInsightsCard';
 
 export interface MonthlySpendingItem {
   year: number;
@@ -602,6 +603,8 @@ export default function DashboardPage() {
 
       {/* Bottom Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <AiInsightsCard />
+
         {/* Budget Health */}
         <div className="bg-surface-container-low p-8 rounded-[1.5rem] flex items-center justify-between animate-slide-up stagger-6 hover:-translate-y-0.5 transition-all duration-300 ease-out" style={{ animationFillMode: "both" }}>
           <div>
@@ -693,7 +696,7 @@ export default function DashboardPage() {
                   <span className="font-bold">{monthModalSummary.monthTxs.length} transaction(s)</span> total carrying{' '}
                   <span className="font-bold">{formatCurrency(monthModalSummary.expenses, currency)}</span> in expenses.
                   {monthModalSummary.categories.length > 0 && (
-                    <span> Top category: <span className="font-bold">"{monthModalSummary.categories[0].name}"</span> ({formatCurrency(monthModalSummary.categories[0].amount, currency)}).</span>
+                    <span> Top category: <span className="font-bold">&quot;{monthModalSummary.categories[0].name}&quot;</span> ({formatCurrency(monthModalSummary.categories[0].amount, currency)}).</span>
                   )}
                 </p>
               )}

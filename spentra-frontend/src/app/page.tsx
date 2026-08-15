@@ -158,12 +158,11 @@ export default function LandingPage() {
 
   // Compute interactive ASCII block chart plotting running balance
   const runningBalances = useMemo(() => {
-    let bal = 0;
-    return sandboxTxs.map(tx => {
-      if (tx.type === 'CREDIT') bal += tx.amount;
-      else bal -= tx.amount;
-      return bal;
-    });
+    return sandboxTxs.reduce<number[]>((acc, tx) => {
+      const prevBal = acc.length > 0 ? acc[acc.length - 1] : 0;
+      const nextBal = tx.type === 'CREDIT' ? prevBal + tx.amount : prevBal - tx.amount;
+      return [...acc, nextBal];
+    }, []);
   }, [sandboxTxs]);
 
   const asciiChart = useMemo(() => {
@@ -176,7 +175,7 @@ export default function LandingPage() {
     const rows = 5;
     const cols = data.length;
 
-    let chartLines: string[] = [];
+    const chartLines: string[] = [];
     for (let r = rows - 1; r >= 0; r--) {
       const threshold = minVal + (range / (rows - 1)) * r;
       let line = `${String(Math.round(threshold)).padStart(5)} | `;
