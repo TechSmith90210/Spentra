@@ -16,7 +16,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Plus } from 'lucide-react';
+import { Plus, Sparkles } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
 import Avatar from '@/components/Avatar';
 import { useAuth } from '@/providers/AuthProvider';
@@ -125,6 +125,21 @@ export default function Navbar({ onNewEntry }: NavbarProps) {
           <ThemeToggle />
 
           {/* New Entry CTA */}
+          <Link
+            href="/ai-assistant"
+            className={[
+              'hidden md:inline-flex',
+              'glass-chip text-on-surface cursor-pointer',
+              'text-xs uppercase tracking-widest font-bold',
+              'px-4 py-2 rounded-xl',
+              'items-center gap-2',
+              'transition-all duration-200 active:scale-95',
+            ].join(' ')}
+          >
+            <Sparkles className="w-4 h-4 text-tertiary" />
+            <span>Ask AI</span>
+          </Link>
+
           <button
             onClick={onNewEntry}
             className={[

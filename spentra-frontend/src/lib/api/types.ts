@@ -122,3 +122,24 @@ export interface ApiErrorResponse {
   statusCode: number;
   timestamp: string;
 }
+
+/* ─── AI Assistant ─────────────────────────────────────────────────────────── */
+
+export interface TransactionDraft {
+  title: string;
+  amount: number;
+  type: TransactionType;
+  categoryId: string | null;
+  categoryName: string | null;
+  transactionDate: string;
+  confidence: 'HIGH' | 'MEDIUM' | 'LOW';
+}
+
+export interface AiSummaryResponse {
+  id: string | null;
+  yearMonth: string;
+  summaryText: string;
+  totalSpent: number;
+  topCategory: string | null;
+  generatedAt: string;
+}
