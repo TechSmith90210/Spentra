@@ -43,6 +43,12 @@ describe('utils.ts', () => {
       const result = formatDate('2026-06-27T00:00:00');
       expect(result).toBe('Jun 27, 2026');
     });
+
+    it('formats July dates accurately without timezone shift', () => {
+      expect(formatDate('2026-07-01')).toBe('Jul 1, 2026');
+      expect(formatDate('2026-07-02')).toBe('Jul 2, 2026');
+      expect(formatDate('2026-07-31')).toBe('Jul 31, 2026');
+    });
   });
 
   describe('formatMonth', () => {

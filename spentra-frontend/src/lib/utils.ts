@@ -61,6 +61,22 @@ export function formatInputAmount(value: string, currencyCode: string = 'INR'): 
  * @returns Formatted string like `"Jun 27, 2026"`
  */
 export function formatDate(dateStr: string): string {
+  if (!dateStr) return '';
+  const datePart = dateStr.split('T')[0].split(' ')[0];
+  const parts = datePart.split('-');
+  if (parts.length === 3) {
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10);
+    const day = parseInt(parts[2], 10);
+    if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
+      const date = new Date(year, month - 1, day);
+      return new Intl.DateTimeFormat('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      }).format(date);
+    }
+  }
   const date = new Date(dateStr);
   return new Intl.DateTimeFormat('en-US', {
     month: 'short',
@@ -76,12 +92,18 @@ export function formatDate(dateStr: string): string {
  * @returns Formatted string like `"June 2026"`
  */
 export function formatMonth(monthStr: string): string {
-  const [year, month] = monthStr.split('-');
-  const date = new Date(Number(year), Number(month) - 1, 1);
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'long',
-    year: 'numeric',
-  }).format(date);
+  if (!monthStr) return '';
+  const [yearStr, monthStrPart] = monthStr.split('-');
+  const year = parseInt(yearStr, 10);
+  const month = parseInt(monthStrPart, 10);
+  if (!isNaN(year) && !isNaN(month)) {
+    const date = new Date(year, month - 1, 1);
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'long',
+      year: 'numeric',
+    }).format(date);
+  }
+  return monthStr;
 }
 
 /**

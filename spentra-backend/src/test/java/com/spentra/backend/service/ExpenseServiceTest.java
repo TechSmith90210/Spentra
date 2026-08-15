@@ -258,6 +258,7 @@ class ExpenseServiceTest {
 
     @Test
     void testAddExpense_unauthenticatedRequest() {
+        when(userService.getCurrentUser()).thenCallRealMethod();
         // Clear security context
         SecurityContextHolder.clearContext();
 
@@ -274,6 +275,7 @@ class ExpenseServiceTest {
 
     @Test
     void testAddExpense_unauthenticatedNullPrincipal() {
+        when(userService.getCurrentUser()).thenCallRealMethod();
         // Security context is present but authentication principal is null
         SecurityContextHolder.getContext().setAuthentication(
                 new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(null, null, List.of())
