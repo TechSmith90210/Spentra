@@ -123,7 +123,7 @@ export default function AiAssistantPage() {
       <section className="glass-panel rounded-[1.5rem] p-5 sm:p-6 glow-ai">
         <div className="mb-6">
           <p className="text-sm text-on-surface-variant">
-            Type a spending note like "Spent 45 on dinner yesterday" and I’ll turn it into a draft.
+            Type a spending note like &quot;Spent 45 on dinner yesterday&quot; and I’ll turn it into a draft.
           </p>
         </div>
 

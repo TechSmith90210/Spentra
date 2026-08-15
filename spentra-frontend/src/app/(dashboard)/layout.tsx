@@ -49,7 +49,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {children}
       </main>
       <MobileNav />
-      <LiquidQuickAddChip />
       <AddTransactionModal
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}

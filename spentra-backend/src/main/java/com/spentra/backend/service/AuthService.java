@@ -29,7 +29,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
 
-    @Value("${GOOGLE_CLIENT_ID}")
+    @Value("${GOOGLE_CLIENT_ID:}")
     private String googleClientId;
 
     // signup

@@ -103,22 +103,25 @@ public class GeminiService {
                     currentUser.getId(), e.getStatus(), e.getMessage());
             throw e;
         } catch (Exception e) {
-            log.error("Gemini text parse error userId={} message={}", currentUser.getId(), e.getMessage(), e);
-            throw new ApiRequestException("Could not parse AI response. Please try again.", HttpStatus.BAD_REQUEST);
+            log.warn("Gemini text parse error userId={} message={}, falling back to local rule-based parser",
+                    currentUser.getId(), e.getMessage());
+            return parseTextLocally(prompt, categories);
         }
     }
 
     public TransactionDraftResponse parseReceipt(MultipartFile file) {
-        if (apiKey == null || apiKey.isBlank()) {
-            log.warn("Gemini receipt parse requested but GEMINI_API_KEY is missing");
-            throw new ApiRequestException("AI service temporarily unavailable.", HttpStatus.SERVICE_UNAVAILABLE);
-        }
         validateReceiptFile(file);
 
         User currentUser = userService.getCurrentUser();
         List<Category> categories = categoryRepository.findByUserIdOrUserIsNull(currentUser.getId());
         log.info("Gemini receipt parse request started userId={} fileName={} contentType={} sizeBytes={} categoryCount={}",
                 currentUser.getId(), file.getOriginalFilename(), file.getContentType(), file.getSize(), categories.size());
+
+        if (apiKey == null || apiKey.isBlank()) {
+            log.warn("Gemini receipt parse requested but GEMINI_API_KEY is missing, falling back to local receipt parser");
+            return parseReceiptLocally(file, categories);
+        }
+
         String systemPrompt = buildReceiptPrompt(categories);
 
         try {
@@ -163,16 +166,71 @@ public class GeminiService {
                     currentUser.getId(), e.getStatus(), e.getMessage());
             throw e;
         } catch (Exception e) {
-            log.error("Gemini receipt parse error userId={} message={}", currentUser.getId(), e.getMessage(), e);
-            throw new ApiRequestException("Could not parse AI response. Please try again.", HttpStatus.BAD_REQUEST);
+            log.warn("Gemini receipt parse error userId={} message={}, falling back to local receipt parser",
+                    currentUser.getId(), e.getMessage());
+            return parseReceiptLocally(file, categories);
         }
     }
 
+    private TransactionDraftResponse parseReceiptLocally(MultipartFile file, List<Category> categories) {
+        String filename = file != null && file.getOriginalFilename() != null ? file.getOriginalFilename() : "Receipt";
+        String cleanName = filename.replaceAll("(?i)\\.(jpg|jpeg|png|webp|heic|pdf)$", "")
+                .replaceAll("[_-]+", " ")
+                .trim();
+
+        double amount = 0.0;
+        java.util.regex.Pattern numPattern = java.util.regex.Pattern.compile("([0-9]+(?:\\.[0-9]{1,2})?)");
+        java.util.regex.Matcher nm = numPattern.matcher(cleanName);
+        if (nm.find()) {
+            try {
+                amount = Double.parseDouble(nm.group(1));
+            } catch (Exception ignored) {}
+        }
+
+        String lower = cleanName.toLowerCase(Locale.ROOT);
+        Category matchedCategory = null;
+        String matchedCatName = null;
+        for (Category cat : categories) {
+            if (cat.getName() != null && lower.contains(cat.getName().toLowerCase(Locale.ROOT))) {
+                matchedCategory = cat;
+                matchedCatName = cat.getName();
+                break;
+            }
+        }
+        if (matchedCategory == null) {
+            if (lower.contains("food") || lower.contains("dinner") || lower.contains("lunch") || lower.contains("cafe") || lower.contains("coffee") || lower.contains("restaurant")) {
+                matchedCategory = resolveCategory("Food", categories);
+                matchedCatName = matchedCategory != null ? matchedCategory.getName() : "Food";
+            } else if (lower.contains("grocery") || lower.contains("groceries") || lower.contains("mart") || lower.contains("market") || lower.contains("supermarket")) {
+                matchedCategory = resolveCategory("Groceries", categories);
+                matchedCatName = matchedCategory != null ? matchedCategory.getName() : "Groceries";
+            } else {
+                matchedCategory = resolveCategory("Shopping", categories);
+                matchedCatName = matchedCategory != null ? matchedCategory.getName() : (categories.isEmpty() ? "General" : categories.get(0).getName());
+            }
+        }
+
+        String title = cleanName.length() > 30 || cleanName.matches("^[0-9a-zA-Z]{12,}.*") || cleanName.isBlank()
+                ? "Receipt Purchase"
+                : (Character.toUpperCase(cleanName.charAt(0)) + cleanName.substring(1));
+
+        return new TransactionDraftResponse(
+                title,
+                amount,
+                TransactionType.EXPENSE,
+                matchedCategory != null ? matchedCategory.getId() : null,
+                matchedCatName,
+                LocalDate.now(),
+                amount > 0 ? "MEDIUM" : "LOW"
+        );
+    }
+
+    @org.springframework.transaction.annotation.Transactional
     public AiSummaryResponse getOrGenerateInsights(String yearMonth, String currencyCode) {
         UUID userId = userService.getCurrentUser().getId();
         YearMonth month = parseMonth(yearMonth);
         log.info("AI insights request started userId={} month={} currency={}", userId, month, currencyCode);
-        return aiSummaryRepository.findByUserIdAndYearMonth(userId, month)
+        return aiSummaryRepository.findFirstByUserIdAndYearMonthOrderByGeneratedAtDesc(userId, month)
                 .map(summary -> {
                     log.info("AI insights cache hit userId={} month={} summaryId={}", userId, month, summary.getId());
                     return toResponse(summary);
@@ -183,11 +241,11 @@ public class GeminiService {
                 });
     }
 
+    @org.springframework.transaction.annotation.Transactional
     public AiSummaryResponse refreshInsights(String yearMonth, String currencyCode) {
         UUID userId = userService.getCurrentUser().getId();
         YearMonth month = parseMonth(yearMonth);
         log.info("AI insights refresh requested userId={} month={} currency={}", userId, month, currencyCode);
-        aiSummaryRepository.deleteByUserIdAndYearMonth(userId, month);
         return generateInsights(userId, month, currencyCode);
     }
 
@@ -262,6 +320,7 @@ public class GeminiService {
         summaryEntity.setTopCategory(topCategory);
         summaryEntity.setGeneratedAt(LocalDateTime.now());
 
+        aiSummaryRepository.deleteByUserIdAndYearMonth(userId, month);
         AiSummary saved = aiSummaryRepository.save(summaryEntity);
         log.info("AI insights saved userId={} month={} summaryId={}", userId, month, saved.getId());
         return toResponse(saved);
@@ -437,6 +496,98 @@ public class GeminiService {
         } catch (Exception ex) {
             return TransactionType.EXPENSE;
         }
+    }
+
+    private TransactionDraftResponse parseTextLocally(String prompt, List<Category> categories) {
+        if (prompt == null || prompt.isBlank()) {
+            return new TransactionDraftResponse("", 0.0, TransactionType.EXPENSE, null, null, LocalDate.now(), "LOW");
+        }
+
+        String text = prompt.trim();
+        String lower = text.toLowerCase(Locale.ROOT);
+
+        // Date detection
+        LocalDate txDate = LocalDate.now();
+        if (lower.contains("yesterday")) {
+            txDate = txDate.minusDays(1);
+        }
+
+        // Type detection
+        TransactionType type = TransactionType.EXPENSE;
+        if (lower.contains("salary") || lower.contains("credited") || lower.contains("received")
+                || lower.contains("refund") || lower.contains("cashback") || lower.contains("income") || lower.contains("got paid")) {
+            type = TransactionType.CREDIT;
+        }
+
+        // Amount detection: look for patterns like "for 539rs", "539 rs", "₹539", "$50", "539"
+        double amount = 0.0;
+        java.util.regex.Pattern explicitPattern = java.util.regex.Pattern.compile(
+                "(?:for|spent|paid|cost|of)?\\s*(?:rs\\.?|inr|₹|\\$|€|£)\\s*([0-9]+(?:\\.[0-9]{1,2})?)|([0-9]+(?:\\.[0-9]{1,2})?)\\s*(?:rs\\.?|inr|rupees)",
+                java.util.regex.Pattern.CASE_INSENSITIVE
+        );
+        java.util.regex.Matcher explicitMatcher = explicitPattern.matcher(text);
+        if (explicitMatcher.find()) {
+            String val = explicitMatcher.group(1) != null ? explicitMatcher.group(1) : explicitMatcher.group(2);
+            amount = Double.parseDouble(val);
+        } else {
+            java.util.regex.Pattern numPattern = java.util.regex.Pattern.compile("([0-9]+(?:\\.[0-9]{1,2})?)");
+            java.util.regex.Matcher nm = numPattern.matcher(text);
+            while (nm.find()) {
+                double val = Double.parseDouble(nm.group(1));
+                if (val > amount) {
+                    amount = val;
+                }
+            }
+        }
+
+        // Category matching
+        Category matchedCategory = null;
+        String matchedCatName = null;
+        for (Category cat : categories) {
+            if (cat.getName() != null && lower.contains(cat.getName().toLowerCase(Locale.ROOT))) {
+                matchedCategory = cat;
+                matchedCatName = cat.getName();
+                break;
+            }
+        }
+        if (matchedCategory == null) {
+            if (lower.contains("dinner") || lower.contains("lunch") || lower.contains("food") || lower.contains("coffee") || lower.contains("restaurant") || lower.contains("eat")) {
+                matchedCategory = resolveCategory("Food", categories);
+                matchedCatName = matchedCategory != null ? matchedCategory.getName() : "Food";
+            } else if (lower.contains("cab") || lower.contains("uber") || lower.contains("ola") || lower.contains("metro") || lower.contains("fuel") || lower.contains("petrol") || lower.contains("rapido")) {
+                matchedCategory = resolveCategory("Transport", categories);
+                matchedCatName = matchedCategory != null ? matchedCategory.getName() : "Transport";
+            } else if (lower.contains("groceries") || lower.contains("packet") || lower.contains("packets") || lower.contains("milk") || lower.contains("litter") || lower.contains("mart") || lower.contains("cat")) {
+                matchedCategory = resolveCategory("Groceries", categories);
+                matchedCatName = matchedCategory != null ? matchedCategory.getName() : "Groceries";
+            } else if (lower.contains("movie") || lower.contains("netflix") || lower.contains("game")) {
+                matchedCategory = resolveCategory("Entertainment", categories);
+                matchedCatName = matchedCategory != null ? matchedCategory.getName() : "Entertainment";
+            }
+        }
+
+        // Clean title
+        String cleanTitle = text;
+        cleanTitle = cleanTitle.replaceAll("(?i)\\b(today|yesterday|tomorrow)\\b", "");
+        cleanTitle = cleanTitle.replaceAll("(?i)\\b(for|spent|paid)\\s*(?:rs\\.?|inr|₹|\\$|€|£)?\\s*[0-9]+(?:\\.[0-9]+)?\\s*(?:rs\\.?|inr|rupees)?\\b", "");
+        cleanTitle = cleanTitle.replaceAll("(?i)(?:rs\\.?|inr|₹|\\$|€|£)\\s*[0-9]+(?:\\.[0-9]+)?", "");
+        cleanTitle = cleanTitle.replaceAll("(?i)[0-9]+(?:\\.[0-9]+)?\\s*(?:rs\\.?|inr|rupees)", "");
+        cleanTitle = cleanTitle.replaceAll("(?i)^(bought|purchased|paid for|paid|spent on)\\s+", "");
+        cleanTitle = cleanTitle.replaceAll("\\s+", " ").trim();
+        if (cleanTitle.isBlank()) {
+            cleanTitle = prompt.trim();
+        }
+        cleanTitle = cleanTitle.substring(0, 1).toUpperCase(Locale.ROOT) + (cleanTitle.length() > 1 ? cleanTitle.substring(1) : "");
+
+        return new TransactionDraftResponse(
+                cleanTitle,
+                amount,
+                type,
+                matchedCategory != null ? matchedCategory.getId() : null,
+                matchedCatName,
+                txDate,
+                amount > 0 ? "HIGH" : "MEDIUM"
+        );
     }
 
     private String escapeJson(String value) {

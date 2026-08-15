@@ -65,7 +65,7 @@ class AiInsightsServiceTest {
         cached.setTopCategory("Food");
         cached.setGeneratedAt(LocalDateTime.of(2026, 8, 15, 12, 0));
 
-        when(aiSummaryRepository.findByUserIdAndYearMonth(userId, month)).thenReturn(Optional.of(cached));
+        when(aiSummaryRepository.findFirstByUserIdAndYearMonthOrderByGeneratedAtDesc(userId, month)).thenReturn(Optional.of(cached));
 
         AiSummaryResponse response = service.getOrGenerateInsights("2026-08", "INR");
 
@@ -77,7 +77,7 @@ class AiInsightsServiceTest {
     @Test
     void getOrGenerateInsights_noTransactions_returnsEmptyState() {
         YearMonth month = YearMonth.of(2026, 8);
-        when(aiSummaryRepository.findByUserIdAndYearMonth(userId, month)).thenReturn(Optional.empty());
+        when(aiSummaryRepository.findFirstByUserIdAndYearMonthOrderByGeneratedAtDesc(userId, month)).thenReturn(Optional.empty());
         when(expenseRepository.findByUserId(userId)).thenReturn(List.of());
 
         AiSummaryResponse response = service.getOrGenerateInsights("2026-08", "INR");
@@ -109,6 +109,11 @@ class AiInsightsServiceTest {
         e2.setCategory(food);
 
         when(expenseRepository.findByUserId(userId)).thenReturn(List.of(e1, e2));
+        when(aiSummaryRepository.save(any(AiSummary.class))).thenAnswer(invocation -> {
+            AiSummary entity = invocation.getArgument(0);
+            entity.setId(UUID.randomUUID());
+            return entity;
+        });
 
         AiSummaryResponse response = service.refreshInsights("2026-08", "USD");
 
