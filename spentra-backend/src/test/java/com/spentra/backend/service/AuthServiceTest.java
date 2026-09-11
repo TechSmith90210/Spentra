@@ -137,7 +137,6 @@ public class AuthServiceTest {
         user.setEmail("john@example.com");
         user.setPassword("encodedPassword123");
 
-        when(userRepository.existsByEmail(request.getEmail())).thenReturn(true);
         when(userRepository.findByEmail(request.getEmail())).thenReturn(Optional.of(user));
         when(passwordEncoder.matches(request.getPassword(), user.getPassword())).thenReturn(true);
         when(jwtService.generateToken(user.getId().toString(), user.getEmail())).thenReturn("dummy_jwt_token");
@@ -151,8 +150,8 @@ public class AuthServiceTest {
         assertEquals("john@example.com", response.getEmail());
         assertEquals("John Doe", response.getName());
 
-        verify(userRepository).existsByEmail(request.getEmail());
         verify(userRepository).findByEmail(request.getEmail());
+        verify(userRepository, never()).existsByEmail(anyString());
         verify(passwordEncoder).matches(request.getPassword(), user.getPassword());
         verify(jwtService).generateToken(user.getId().toString(), user.getEmail());
     }
@@ -164,40 +163,51 @@ public class AuthServiceTest {
         request.setEmail("notfound@example.com");
         request.setPassword("Password123");
 
-        when(userRepository.existsByEmail(request.getEmail())).thenReturn(false);
+        when(userRepository.findByEmail(request.getEmail())).thenReturn(Optional.empty());
+        when(passwordEncoder.matches(anyString(), anyString())).thenReturn(false);
 
         // Act & Assert
         ApiRequestException exception = assertThrows(ApiRequestException.class, () -> {
             authService.login(request);
         });
 
-        assertEquals("User not found", exception.getMessage());
-        assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
+        assertEquals("Invalid email or password", exception.getMessage());
+        assertEquals(HttpStatus.UNAUTHORIZED, exception.getStatus());
 
-        verify(userRepository).existsByEmail(request.getEmail());
-        verify(userRepository, never()).findByEmail(anyString());
+        verify(userRepository).findByEmail(request.getEmail());
+        verify(userRepository, never()).existsByEmail(anyString());
+        verify(passwordEncoder).matches(anyString(), anyString());
+        verify(jwtService, never()).generateToken(anyString(), anyString());
     }
 
     @Test
-    void testLogin_UserExistsButFindByEmailReturnsEmpty() {
+    void testLogin_UserWithoutLocalPassword() {
         // Arrange
         LoginRequest request = new LoginRequest();
         request.setEmail("john@example.com");
         request.setPassword("Password123");
 
-        when(userRepository.existsByEmail(request.getEmail())).thenReturn(true);
-        when(userRepository.findByEmail(request.getEmail())).thenReturn(Optional.empty());
+        User user = new User();
+        user.setId(UUID.randomUUID());
+        user.setName("John Doe");
+        user.setEmail("john@example.com");
+        user.setPassword(null);
+
+        when(userRepository.findByEmail(request.getEmail())).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(anyString(), anyString())).thenReturn(false);
 
         // Act & Assert
         ApiRequestException exception = assertThrows(ApiRequestException.class, () -> {
             authService.login(request);
         });
 
-        assertEquals("User not found", exception.getMessage());
-        assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
+        assertEquals("Invalid email or password", exception.getMessage());
+        assertEquals(HttpStatus.UNAUTHORIZED, exception.getStatus());
 
-        verify(userRepository).existsByEmail(request.getEmail());
         verify(userRepository).findByEmail(request.getEmail());
+        verify(userRepository, never()).existsByEmail(anyString());
+        verify(passwordEncoder).matches(anyString(), anyString());
+        verify(jwtService, never()).generateToken(anyString(), anyString());
     }
 
     @Test
@@ -213,7 +223,6 @@ public class AuthServiceTest {
         user.setEmail("john@example.com");
         user.setPassword("encodedPassword123");
 
-        when(userRepository.existsByEmail(request.getEmail())).thenReturn(true);
         when(userRepository.findByEmail(request.getEmail())).thenReturn(Optional.of(user));
         when(passwordEncoder.matches(request.getPassword(), user.getPassword())).thenReturn(false);
 
@@ -222,11 +231,11 @@ public class AuthServiceTest {
             authService.login(request);
         });
 
-        assertEquals("Login failed", exception.getMessage());
+        assertEquals("Invalid email or password", exception.getMessage());
         assertEquals(HttpStatus.UNAUTHORIZED, exception.getStatus());
 
-        verify(userRepository).existsByEmail(request.getEmail());
         verify(userRepository).findByEmail(request.getEmail());
+        verify(userRepository, never()).existsByEmail(anyString());
         verify(passwordEncoder).matches(request.getPassword(), user.getPassword());
         verify(jwtService, never()).generateToken(anyString(), anyString());
     }

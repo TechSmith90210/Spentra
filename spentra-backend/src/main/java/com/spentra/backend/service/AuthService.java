@@ -25,6 +25,9 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class AuthService {
+    private static final String DUMMY_PASSWORD_HASH =
+            "$2a$10$uPqmTLyd68tnbK9S/PWXKuBxKezTh3oGYyJ6vPqj9f/skmg9/TBo2";
+
     private final UserRepository repository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
@@ -60,31 +63,23 @@ public class AuthService {
 
     // login
     public LoginResponse login(LoginRequest loginRequest) {
+        User fetchedUser = repository.findByEmail(loginRequest.getEmail()).orElse(null);
+        String storedPassword = fetchedUser != null && fetchedUser.getPassword() != null
+                ? fetchedUser.getPassword()
+                : DUMMY_PASSWORD_HASH;
+        boolean isPasswordValid = passwordEncoder.matches(loginRequest.getPassword(), storedPassword);
 
-        boolean isUserExists = repository.existsByEmail(loginRequest.getEmail());
-
-        if (isUserExists) {
-            User fetchedUser = repository.findByEmail(loginRequest.getEmail())
-                    .orElseThrow(() -> new ApiRequestException("User not found", HttpStatus.NOT_FOUND));
-            // password validation
-            boolean isPasswordValid = passwordEncoder.matches(loginRequest.getPassword(),
-                    fetchedUser.getPassword());
-
-            if (isPasswordValid) {
-
-                String token = jwtService.generateToken(fetchedUser.getId().toString(), fetchedUser.getEmail());
-
-                return new LoginResponse(
-                        token,
-                        fetchedUser.getEmail(),
-                        fetchedUser.getName(),
-                        fetchedUser.getProfilePic());
-            }
-        } else {
-            throw new ApiRequestException("User not found", HttpStatus.NOT_FOUND);
+        if (fetchedUser == null || fetchedUser.getPassword() == null || !isPasswordValid) {
+            throw new ApiRequestException("Invalid email or password", HttpStatus.UNAUTHORIZED);
         }
 
-        throw new ApiRequestException("Login failed", HttpStatus.UNAUTHORIZED);
+        String token = jwtService.generateToken(fetchedUser.getId().toString(), fetchedUser.getEmail());
+
+        return new LoginResponse(
+                token,
+                fetchedUser.getEmail(),
+                fetchedUser.getName(),
+                fetchedUser.getProfilePic());
     }
 
     // google login
