@@ -71,14 +71,17 @@ class AiInsightsServiceTest {
 
         assertEquals("Cached summary", response.getSummaryText());
         assertEquals(123.0, response.getTotalSpent());
-        verify(expenseRepository, org.mockito.Mockito.never()).findByUserId(any());
+        verify(expenseRepository, org.mockito.Mockito.never())
+                .findByUserIdAndTypeAndTransactionDateBetween(any(), any(), any(), any());
     }
 
     @Test
     void getOrGenerateInsights_noTransactions_returnsEmptyState() {
         YearMonth month = YearMonth.of(2026, 8);
         when(aiSummaryRepository.findFirstByUserIdAndYearMonthOrderByGeneratedAtDesc(userId, month)).thenReturn(Optional.empty());
-        when(expenseRepository.findByUserId(userId)).thenReturn(List.of());
+        when(expenseRepository.findByUserIdAndTypeAndTransactionDateBetween(
+                userId, TransactionType.EXPENSE, month.atDay(1), month.atEndOfMonth()))
+                .thenReturn(List.of());
 
         AiSummaryResponse response = service.getOrGenerateInsights("2026-08", "INR");
 
@@ -108,7 +111,9 @@ class AiInsightsServiceTest {
         e2.setTransactionDate(LocalDate.of(2026, 8, 11));
         e2.setCategory(food);
 
-        when(expenseRepository.findByUserId(userId)).thenReturn(List.of(e1, e2));
+        when(expenseRepository.findByUserIdAndTypeAndTransactionDateBetween(
+                userId, TransactionType.EXPENSE, month.atDay(1), month.atEndOfMonth()))
+                .thenReturn(List.of(e1, e2));
         when(aiSummaryRepository.save(any(AiSummary.class))).thenAnswer(invocation -> {
             AiSummary entity = invocation.getArgument(0);
             entity.setId(UUID.randomUUID());

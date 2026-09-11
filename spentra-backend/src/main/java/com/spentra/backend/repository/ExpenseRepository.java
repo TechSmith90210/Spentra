@@ -27,6 +27,13 @@ public interface ExpenseRepository extends JpaRepository<Expense, UUID> {
      */
     List<Expense> findByUserId(UUID userId);
 
+    List<Expense> findByUserIdAndTypeAndTransactionDateBetween(
+        UUID userId,
+        TransactionType type,
+        LocalDate startDate,
+        LocalDate endDate
+    );
+
     /**
      * Finds all recurring transaction templates that are due for execution.
      *

@@ -68,6 +68,11 @@ export default function AiAssistantPage() {
 
   async function handleReceiptUpload(file: File | null) {
     if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      setError('Receipt images must be 2 MB or smaller.');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
     setError('');
     setLoading(true);
     try {
