@@ -14,6 +14,8 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 public class RateLimitingFilter implements Filter {
 
+    private static final int MAX_TRACKED_CLIENTS = 10_000;
+
     // Map to store token buckets for each IP address
     private final Map<String, TokenBucket> buckets = new ConcurrentHashMap<>();
 
@@ -23,7 +25,7 @@ public class RateLimitingFilter implements Filter {
     }
 
     // Clean up inactive rate limiting buckets to prevent memory leaks and DoS/OOM issues
-    @Scheduled(fixedRate = 3600000) // Run every hour
+    @Scheduled(fixedRate = 600000) // Run every ten minutes
     public void pruneBuckets() {
         Instant oneHourAgo = Instant.now().minusSeconds(3600);
         buckets.entrySet().removeIf(entry -> entry.getValue().getLastRefillTime().isBefore(oneHourAgo));
@@ -48,24 +50,35 @@ public class RateLimitingFilter implements Filter {
             HttpServletResponse httpResponse = (HttpServletResponse) response;
 
             String ipAddress = getClientIP(httpRequest);
-            TokenBucket bucket = buckets.computeIfAbsent(ipAddress, k -> new TokenBucket(BUCKET_CAPACITY));
+            TokenBucket bucket = buckets.get(ipAddress);
+            if (bucket == null) {
+                if (buckets.size() >= MAX_TRACKED_CLIENTS) {
+                    writeTooManyRequests(httpResponse);
+                    return;
+                }
+                bucket = buckets.computeIfAbsent(ipAddress, k -> new TokenBucket(BUCKET_CAPACITY));
+            }
 
             if (!bucket.tryConsume()) {
-                httpResponse.setStatus(429); // Too Many Requests
-                httpResponse.setContentType("application/json");
-                
-                String jsonResponse = String.format(
-                        "{\"message\": \"Too many requests. Please try again later.\", " +
-                                "\"statusCode\": 429, " +
-                                "\"timestamp\": \"%s\"}",
-                        java.time.ZonedDateTime.now());
-                
-                httpResponse.getWriter().write(jsonResponse);
+                writeTooManyRequests(httpResponse);
                 return;
             }
         }
 
         chain.doFilter(request, response);
+    }
+
+    private void writeTooManyRequests(HttpServletResponse response) throws IOException {
+        response.setStatus(429);
+        response.setContentType("application/json");
+
+        String jsonResponse = String.format(
+                "{\"message\": \"Too many requests. Please try again later.\", " +
+                        "\"statusCode\": 429, " +
+                        "\"timestamp\": \"%s\"}",
+                java.time.ZonedDateTime.now());
+
+        response.getWriter().write(jsonResponse);
     }
 
     @Override

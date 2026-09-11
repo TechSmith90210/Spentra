@@ -175,7 +175,7 @@ class GeminiServiceTest {
                 "file",
                 "receipt.jpg",
                 "image/jpeg",
-                new byte[10 * 1024 * 1024 + 1]);
+                new byte[2 * 1024 * 1024 + 1]);
 
         ApiRequestException ex = assertThrows(ApiRequestException.class, () -> geminiService.parseReceipt(file));
         assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());

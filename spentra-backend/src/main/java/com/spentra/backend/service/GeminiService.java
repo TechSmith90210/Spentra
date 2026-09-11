@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.Semaphore;
 import java.util.stream.Collectors;
 
 import com.google.gson.JsonElement;
@@ -42,6 +43,9 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 public class GeminiService {
+
+    private static final long MAX_RECEIPT_SIZE_BYTES = 2 * 1024 * 1024L;
+    private static final Semaphore RECEIPT_PROCESSING_SLOT = new Semaphore(1);
 
     private final CategoryRepository categoryRepository;
     private final ExpenseRepository expenseRepository;
@@ -111,6 +115,21 @@ public class GeminiService {
 
     public TransactionDraftResponse parseReceipt(MultipartFile file) {
         validateReceiptFile(file);
+
+        if (!RECEIPT_PROCESSING_SLOT.tryAcquire()) {
+            throw new ApiRequestException(
+                    "Receipt processing is busy. Please try again shortly.",
+                    HttpStatus.TOO_MANY_REQUESTS);
+        }
+
+        try {
+            return parseReceiptWithSlot(file);
+        } finally {
+            RECEIPT_PROCESSING_SLOT.release();
+        }
+    }
+
+    private TransactionDraftResponse parseReceiptWithSlot(MultipartFile file) {
 
         User currentUser = userService.getCurrentUser();
         List<Category> categories = categoryRepository.findByUserIdOrUserIsNull(currentUser.getId());
@@ -276,11 +295,8 @@ public class GeminiService {
     private AiSummaryResponse generateInsights(UUID userId, YearMonth month, String currencyCode) {
         LocalDate start = month.atDay(1);
         LocalDate end = month.atEndOfMonth();
-        List<Expense> expenses = expenseRepository.findByUserId(userId).stream()
-                .filter(expense -> expense.getType() == TransactionType.EXPENSE)
-                .filter(expense -> expense.getTransactionDate() != null)
-                .filter(expense -> !expense.getTransactionDate().isBefore(start) && !expense.getTransactionDate().isAfter(end))
-                .toList();
+        List<Expense> expenses = expenseRepository.findByUserIdAndTypeAndTransactionDateBetween(
+                userId, TransactionType.EXPENSE, start, end);
 
         if (expenses.isEmpty()) {
             log.info("AI insights empty-state userId={} month={}", userId, month);
@@ -461,9 +477,9 @@ public class GeminiService {
             log.warn("Receipt validation failed: missing file");
             throw new ApiRequestException("Image file is required.", HttpStatus.BAD_REQUEST);
         }
-        if (file.getSize() > 10 * 1024 * 1024L) {
+        if (file.getSize() > MAX_RECEIPT_SIZE_BYTES) {
             log.warn("Receipt validation failed: file too large sizeBytes={}", file.getSize());
-            throw new ApiRequestException("Image file size must be under 10 MB.", HttpStatus.BAD_REQUEST);
+            throw new ApiRequestException("Image file size must be under 2 MB.", HttpStatus.BAD_REQUEST);
         }
 
         String mimeType = file.getContentType() == null ? "" : file.getContentType().toLowerCase(Locale.ROOT);
