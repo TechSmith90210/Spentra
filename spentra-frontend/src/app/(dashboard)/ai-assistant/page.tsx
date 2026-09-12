@@ -8,7 +8,12 @@ import Input from '@/components/Input';
 import Select from '@/components/Select';
 import { getCategories } from '@/lib/api/categories';
 import { createTransaction } from '@/lib/api/transactions';
-import { parseReceiptImage, parseTextPrompt } from '@/lib/api/ai';
+import {
+  MAX_RECEIPT_SIZE_BYTES,
+  parseReceiptImage,
+  parseTextPrompt,
+  RECEIPT_SIZE_ERROR,
+} from '@/lib/api/ai';
 import type { Category, TransactionDraft, TransactionType } from '@/lib/api/types';
 import { useSettings } from '@/providers/SettingsProvider';
 
@@ -68,8 +73,8 @@ export default function AiAssistantPage() {
 
   async function handleReceiptUpload(file: File | null) {
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) {
-      setError('Receipt images must be 2 MB or smaller.');
+    if (file.size > MAX_RECEIPT_SIZE_BYTES) {
+      setError(RECEIPT_SIZE_ERROR);
       if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
@@ -172,7 +177,7 @@ export default function AiAssistantPage() {
             </div>
           </form>
           <p className="text-xs text-on-surface-variant">
-            Upload JPEG, PNG, WebP, or HEIC. Max 10 MB.
+            Upload JPEG, PNG, WebP, or HEIC. Max 2 MB.
           </p>
         </div>
 

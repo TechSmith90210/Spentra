@@ -479,7 +479,7 @@ public class GeminiService {
         }
         if (file.getSize() > MAX_RECEIPT_SIZE_BYTES) {
             log.warn("Receipt validation failed: file too large sizeBytes={}", file.getSize());
-            throw new ApiRequestException("Image file size must be under 2 MB.", HttpStatus.BAD_REQUEST);
+            throw new ApiRequestException("Receipt images must be 2 MB or smaller.", HttpStatus.BAD_REQUEST);
         }
 
         String mimeType = file.getContentType() == null ? "" : file.getContentType().toLowerCase(Locale.ROOT);

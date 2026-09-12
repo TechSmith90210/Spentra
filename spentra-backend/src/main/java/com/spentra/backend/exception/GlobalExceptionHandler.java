@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import com.spentra.backend.model.dto.exception.ApiExceptionResponse;
 
@@ -28,6 +29,18 @@ public class GlobalExceptionHandler {
                 .build();
 
         return new ResponseEntity<>(response, e.getStatus());
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ApiExceptionResponse> handleMaxUploadSizeExceededException(MaxUploadSizeExceededException e) {
+        log.warn("Receipt upload rejected because it exceeds the 2 MB limit");
+        ApiExceptionResponse response = ApiExceptionResponse.builder()
+                .message("Receipt images must be 2 MB or smaller.")
+                .statusCode(HttpStatus.BAD_REQUEST.value())
+                .timestamp(ZonedDateTime.now())
+                .build();
+
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
     // 2. Fallback for unexpected 500 errors (database down, null pointers, etc.)

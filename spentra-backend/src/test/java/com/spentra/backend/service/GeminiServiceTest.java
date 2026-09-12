@@ -179,6 +179,7 @@ class GeminiServiceTest {
 
         ApiRequestException ex = assertThrows(ApiRequestException.class, () -> geminiService.parseReceipt(file));
         assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+        assertEquals("Receipt images must be 2 MB or smaller.", ex.getMessage());
     }
 
     @Test

@@ -6,6 +6,9 @@
 import { apiClient } from './client';
 import type { AiSummaryResponse, TransactionDraft } from './types';
 
+export const MAX_RECEIPT_SIZE_BYTES = 2 * 1024 * 1024;
+export const RECEIPT_SIZE_ERROR = 'Receipt images must be 2 MB or smaller.';
+
 export async function parseTextPrompt(prompt: string): Promise<TransactionDraft> {
   return apiClient<TransactionDraft>('/api/ai/parse-text', {
     method: 'POST',
@@ -24,6 +27,10 @@ export async function refreshAiInsights(month: string, currency: string): Promis
 }
 
 export async function parseReceiptImage(file: File): Promise<TransactionDraft> {
+  if (file.size > MAX_RECEIPT_SIZE_BYTES) {
+    throw new Error(RECEIPT_SIZE_ERROR);
+  }
+
   const formData = new FormData();
   formData.append('file', file);
 
