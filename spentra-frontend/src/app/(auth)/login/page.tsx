@@ -8,6 +8,7 @@ import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { Mail, Lock } from 'lucide-react';
 import { useAuth } from '@/providers/AuthProvider';
+import { getLoginErrorMessage } from '@/lib/api/auth';
 import { GoogleLogin } from '@react-oauth/google';
 import Button from '@/components/Button';
 import Input from '@/components/Input';
@@ -30,8 +31,7 @@ export default function LoginPage() {
       await login({ email, password });
       router.push('/dashboard');
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Login failed. Please try again.';
-      setError(message);
+      setError(getLoginErrorMessage(err));
     } finally {
       setLoading(false);
     }

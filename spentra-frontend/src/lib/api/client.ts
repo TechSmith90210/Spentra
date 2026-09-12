@@ -7,7 +7,7 @@
  *   - Base URL resolution from environment variable
  *   - Automatic Bearer-token injection from localStorage
  *   - Structured error handling via `ApiError`
- *   - Automatic 401 session expiration → redirect to /login
+ *   - Automatic 401 session expiration on authenticated requests → redirect to /login
  */
 
 import { SPENTRA_TOKEN_KEY, SPENTRA_USER_KEY } from '@/lib/constants/auth';
@@ -48,6 +48,17 @@ export class ApiError extends Error {
   }
 }
 
+/** Options accepted by {@link apiClient} in addition to standard fetch options. */
+export interface ApiClientOptions extends RequestInit {
+  /**
+   * Whether the current session token may be sent with the request.
+   *
+   * Authentication endpoints must opt out so an invalid login attempt is not
+   * treated as an expired session when a stale token exists in localStorage.
+   */
+  includeAuthToken?: boolean;
+}
+
 /* ─── Client ────────────────────────────────────────────────────────────────── */
 
 /**
@@ -63,28 +74,38 @@ export class ApiError extends Error {
  */
 export async function apiClient<T>(
   endpoint: string,
-  options: RequestInit = {},
+  options: ApiClientOptions = {},
 ): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
+  const {
+    includeAuthToken = true,
+    headers: requestHeaders,
+    ...requestOptions
+  } = options;
 
   /* ── Build headers ──────────────────────────────────────────────────────── */
   const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
   const headers: Record<string, string> = {
     ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
-    ...(options.headers as Record<string, string> | undefined),
+    ...(requestHeaders as Record<string, string> | undefined),
   };
 
-  // Inject Bearer token when running on the client
-  if (typeof window !== 'undefined') {
+  // Public auth requests must never inherit a stale session token.
+  if (!includeAuthToken) {
+    delete headers.Authorization;
+  } else if (typeof window !== 'undefined') {
+    // Inject Bearer token when running on the client.
     const token = localStorage.getItem(SPENTRA_TOKEN_KEY);
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
   }
 
+  const isAuthenticatedRequest = Boolean(headers.Authorization);
+
   /* ── Execute request ────────────────────────────────────────────────────── */
   const response = await fetch(url, {
-    ...options,
+    ...requestOptions,
     headers,
   });
 
@@ -102,8 +123,13 @@ export async function apiClient<T>(
       };
     }
 
-    // Session expired — clear credentials and bounce to login
-    if (response.status === 401 && typeof window !== 'undefined') {
+    // Session expired — clear credentials and bounce to login. Public login
+    // failures stay on the form so users can correct and resubmit it.
+    if (
+      response.status === 401 &&
+      isAuthenticatedRequest &&
+      typeof window !== 'undefined'
+    ) {
       localStorage.removeItem(SPENTRA_TOKEN_KEY);
       localStorage.removeItem(SPENTRA_USER_KEY);
       window.location.href = '/login';
